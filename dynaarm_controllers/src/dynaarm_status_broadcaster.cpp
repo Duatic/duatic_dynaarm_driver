@@ -28,6 +28,46 @@
 #include <controller_interface/helpers.hpp>
 #include <lifecycle_msgs/msg/state.hpp>
 
+namespace dynaarm_controllers::compat
+{
+// ---- get_value() vs get_optional<double>() ----
+template <typename T, typename = void>
+struct has_get_optional_double : std::false_type {};
+
+template <typename T>
+struct has_get_optional_double<T, std::void_t<decltype(std::declval<const T&>().template get_optional<double>())>>
+  : std::true_type {};
+
+template <class LoanedInterfaceT>
+inline double get_value_or(const LoanedInterfaceT & iface, double fallback = 0.0)
+{
+  if constexpr (has_get_optional_double<LoanedInterfaceT>::value) {
+    auto v = iface.template get_optional<double>();   // Rolling
+    return v ? *v : fallback;
+  } else {
+    return iface.template get_value();                // Jazzy
+  }
+}
+
+// ---- RealtimePublisher API: trylock/msg_/unlockAndPublish vs try_publish ----
+template <typename PubT, typename MsgT>
+inline void publish_rt(PubT & pub, const MsgT & msg)
+{
+  // Rolling: pub->try_publish(msg)
+  if constexpr (std::is_same_v<decltype(std::declval<PubT>()->try_publish(msg)), bool>) {
+    (void)pub->try_publish(msg);
+  } else if constexpr (std::is_same_v<decltype(std::declval<PubT>()->try_publish(msg)), void>) {
+    pub->try_publish(msg);
+  } else {
+    // Jazzy (older): trylock / msg_ / unlockAndPublish
+    if (pub->trylock()) {
+      pub->msg_ = msg;
+      pub->unlockAndPublish();
+    }
+  }
+}
+}  // namespace dynaarm_controllers::compat
+
 namespace dynaarm_controllers
 {
 
@@ -205,29 +245,38 @@ controller_interface::return_type StatusBroadcaster::update(const rclcpp::Time& 
   for (std::size_t i = 0; i < params_.joints.size(); i++) {
     DriveState drive_state_msg;
 
-    drive_state_msg.name = params_.joints.at(i);
-    drive_state_msg.joint_position = joint_position_interfaces_.at(i).get().get_value();
-    drive_state_msg.joint_velocity = joint_velocity_interfaces_.at(i).get().get_value();
-    drive_state_msg.joint_effort = joint_effort_interfaces_.at(i).get().get_value();
-    drive_state_msg.temperature_system = joint_temperature_system_interfaces_.at(i).get().get_value();
-    drive_state_msg.temperature_phase_a = joint_temperature_phase_a_interfaces_.at(i).get().get_value();
-    drive_state_msg.temperature_phase_b = joint_temperature_phase_b_interfaces_.at(i).get().get_value();
-    drive_state_msg.temperature_phase_c = joint_temperature_phase_c_interfaces_.at(i).get().get_value();
-    drive_state_msg.bus_voltage = joint_bus_voltage_interfaces_.at(i).get().get_value();
+    drive_state_msg.joint_position =
+        dynaarm_controllers::compat::get_value_or(joint_position_interfaces_.at(i).get());
+    drive_state_msg.joint_velocity =
+        dynaarm_controllers::compat::get_value_or(joint_velocity_interfaces_.at(i).get());
+    drive_state_msg.joint_effort =
+        dynaarm_controllers::compat::get_value_or(joint_effort_interfaces_.at(i).get());
 
-    drive_state_msg.joint_position_commanded = joint_position_commanded_interfaces_.at(i).get().get_value();
-    drive_state_msg.joint_velocity_commanded = joint_velocity_commanded_interfaces_.at(i).get().get_value();
-    drive_state_msg.joint_effort_commanded = joint_effort_commanded_interfaces_.at(i).get().get_value();
+    drive_state_msg.temperature_system =
+        dynaarm_controllers::compat::get_value_or(joint_temperature_system_interfaces_.at(i).get());
+    drive_state_msg.temperature_phase_a =
+        dynaarm_controllers::compat::get_value_or(joint_temperature_phase_a_interfaces_.at(i).get());
+    drive_state_msg.temperature_phase_b =
+        dynaarm_controllers::compat::get_value_or(joint_temperature_phase_b_interfaces_.at(i).get());
+    drive_state_msg.temperature_phase_c =
+        dynaarm_controllers::compat::get_value_or(joint_temperature_phase_c_interfaces_.at(i).get());
+    drive_state_msg.bus_voltage =
+        dynaarm_controllers::compat::get_value_or(joint_bus_voltage_interfaces_.at(i).get());
+
+    drive_state_msg.joint_position_commanded =
+        dynaarm_controllers::compat::get_value_or(joint_position_commanded_interfaces_.at(i).get());
+    drive_state_msg.joint_velocity_commanded =
+        dynaarm_controllers::compat::get_value_or(joint_velocity_commanded_interfaces_.at(i).get());
+    drive_state_msg.joint_effort_commanded =
+        dynaarm_controllers::compat::get_value_or(joint_effort_commanded_interfaces_.at(i).get());
+
 
     state_msg.states.emplace_back(drive_state_msg);
   }
 
   // and we try to have our realtime publisher publish the message
   // if this doesn't succeed - well it will probably next time
-  if (arm_state_pub_rt_->trylock()) {
-    arm_state_pub_rt_->msg_ = state_msg;
-    arm_state_pub_rt_->unlockAndPublish();
-  }
+  dynaarm_controllers::compat::publish_rt(arm_state_pub_rt_, state_msg);
   return controller_interface::return_type::OK;
 }
 }  // namespace dynaarm_controllers
