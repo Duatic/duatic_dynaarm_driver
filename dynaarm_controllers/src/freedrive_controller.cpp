@@ -28,6 +28,35 @@
 #include <controller_interface/helpers.hpp>
 #include <lifecycle_msgs/msg/state.hpp>
 
+#include <optional>
+#include <type_traits>
+#include <utility>
+
+namespace dynaarm_controllers::compat
+{
+template <typename T, typename = void>
+struct has_get_optional_double : std::false_type
+{
+};
+
+template <typename T>
+struct has_get_optional_double<T, std::void_t<decltype(std::declval<const T&>().template get_optional<double>())>>
+  : std::true_type
+{
+};
+
+template <class LoanedInterfaceT>
+inline double get_value_or(const LoanedInterfaceT& iface, double fallback = 0.0)
+{
+  if constexpr (has_get_optional_double<LoanedInterfaceT>::value) {
+    auto v = iface.template get_optional<double>();  // Rolling
+    return v ? *v : fallback;
+  } else {
+    return iface.template get_value();  // Jazzy
+  }
+}
+}  // namespace dynaarm_controllers::compat
+
 namespace dynaarm_controllers
 {
 FreeDriveController::FreeDriveController()
@@ -143,9 +172,9 @@ FreeDriveController::on_activate([[maybe_unused]] const rclcpp_lifecycle::State&
   const std::size_t joint_count = joint_position_state_interfaces_.size();
   for (std::size_t i = 0; i < joint_count; i++) {
     Gains g;
-    g.p = joint_p_gain_command_interfaces_[i].get().get_value();
-    g.i = joint_i_gain_command_interfaces_[i].get().get_value();
-    g.d = joint_d_gain_command_interfaces_[i].get().get_value();
+    g.p = dynaarm_controllers::compat::get_value_or(joint_p_gain_command_interfaces_[i].get(), 0.0);
+    g.i = dynaarm_controllers::compat::get_value_or(joint_i_gain_command_interfaces_[i].get(), 0.0);
+    g.d = dynaarm_controllers::compat::get_value_or(joint_d_gain_command_interfaces_[i].get(), 0.0);
     previous_gains_.emplace_back(g);
 
     RCLCPP_DEBUG_STREAM(get_node()->get_logger(),
@@ -201,7 +230,8 @@ controller_interface::return_type FreeDriveController::update([[maybe_unused]] c
   // Never the less we command the current joint position. This is only important when switching from this controller to
   // another one
   for (std::size_t i = 0; i < joint_count; i++) {
-    const double current_joint_position = joint_position_state_interfaces_.at(i).get().get_value();
+    const double current_joint_position =
+        dynaarm_controllers::compat::get_value_or(joint_position_state_interfaces_.at(i).get(), 0.0);
     bool success = joint_position_command_interfaces_.at(i).get().set_value(current_joint_position);
 
     if (!success) {

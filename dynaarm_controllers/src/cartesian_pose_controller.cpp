@@ -52,20 +52,24 @@
 namespace dynaarm_controllers::compat
 {
 template <typename T, typename = void>
-struct has_get_optional_double : std::false_type {};
+struct has_get_optional_double : std::false_type
+{
+};
 
 template <typename T>
 struct has_get_optional_double<T, std::void_t<decltype(std::declval<const T&>().template get_optional<double>())>>
-  : std::true_type {};
+  : std::true_type
+{
+};
 
 template <class LoanedInterfaceT>
-inline double get_value_or(const LoanedInterfaceT & iface, double fallback = 0.0)
+inline double get_value_or(const LoanedInterfaceT& iface, double fallback = 0.0)
 {
   if constexpr (has_get_optional_double<LoanedInterfaceT>::value) {
-    auto v = iface.template get_optional<double>();   // Rolling
+    auto v = iface.template get_optional<double>();  // Rolling
     return v ? *v : fallback;
   } else {
-    return iface.template get_value();                // Jazzy (your current API)
+    return iface.template get_value();  // Jazzy (your current API)
   }
 }
 }  // namespace dynaarm_controllers::compat
@@ -470,8 +474,10 @@ CartesianPoseController::on_activate([[maybe_unused]] const rclcpp_lifecycle::St
         RCLCPP_ERROR(get_node()->get_logger(), "Joint '%s' not found in Pinocchio model.", joint_name.c_str());
         return controller_interface::CallbackReturn::FAILURE;
       }
-      q[pinocchio_model_.joints[idx].idx_q()] = dynaarm_controllers::compat::get_value_or(joint_position_state_interfaces_.at(i).get(), 0.0);
-      v[pinocchio_model_.joints[idx].idx_v()] = dynaarm_controllers::compat::get_value_or(joint_velocity_state_interfaces_.at(i).get(), 0.0);
+      q[pinocchio_model_.joints[idx].idx_q()] =
+          dynaarm_controllers::compat::get_value_or(joint_position_state_interfaces_.at(i).get(), 0.0);
+      v[pinocchio_model_.joints[idx].idx_v()] =
+          dynaarm_controllers::compat::get_value_or(joint_velocity_state_interfaces_.at(i).get(), 0.0);
     }
 
     // Update snapshot for worker
@@ -569,9 +575,12 @@ controller_interface::return_type CartesianPoseController::update([[maybe_unused
       return controller_interface::return_type::ERROR;
     }
     // Pinocchio joint index starts at 1, q/v index is idx-1
-    q[pinocchio_model_.joints[idx].idx_q()] = dynaarm_controllers::compat::get_value_or(joint_position_state_interfaces_.at(i).get(), 0.0);
-    v[pinocchio_model_.joints[idx].idx_v()] = dynaarm_controllers::compat::get_value_or(joint_velocity_state_interfaces_.at(i).get(), 0.0);
-    a[pinocchio_model_.joints[idx].idx_v()] = dynaarm_controllers::compat::get_value_or(joint_acceleration_state_interfaces_.at(i).get(), 0.0);
+    q[pinocchio_model_.joints[idx].idx_q()] =
+        dynaarm_controllers::compat::get_value_or(joint_position_state_interfaces_.at(i).get(), 0.0);
+    v[pinocchio_model_.joints[idx].idx_v()] =
+        dynaarm_controllers::compat::get_value_or(joint_velocity_state_interfaces_.at(i).get(), 0.0);
+    a[pinocchio_model_.joints[idx].idx_v()] =
+        dynaarm_controllers::compat::get_value_or(joint_acceleration_state_interfaces_.at(i).get(), 0.0);
   }
 
   // Make a snapshot of q for the IK worker
@@ -652,7 +661,8 @@ controller_interface::return_type CartesianPoseController::update([[maybe_unused
       max_delta_norm = std::max(max_delta_norm, std::abs(delta));
 
       // Read currently commanded position (may be last commanded value)
-      double cmd_current = dynaarm_controllers::compat::get_value_or(joint_position_command_interfaces_.at(i).get(), q_current_joint);
+      double cmd_current =
+          dynaarm_controllers::compat::get_value_or(joint_position_command_interfaces_.at(i).get(), q_current_joint);
 
       // Clamp change per update to MAX_JOINT_STEP to avoid instantaneous jumps
       double applied = q_target_joint;
