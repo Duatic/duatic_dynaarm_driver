@@ -56,6 +56,31 @@ inline std::optional<double> try_get_value(const LoanedInterfaceT& iface)
 }
 
 /**
+ * @brief Retrieve the current value from a loaned interface or throw on failure.
+ *
+ * This is a strict variant of @ref try_get_value(). If the interface value is
+ * not available (e.g. on ROS 2 Rolling during synchronization), an exception
+ * is thrown instead of returning a fallback.
+ *
+ * Intended for fail-fast code paths where missing interface data must abort
+ * the current operation to avoid unsafe behavior.
+ *
+ * @tparam LoanedInterfaceT Type of the loaned interface
+ * @param iface Reference to the loaned interface
+ * @return The current interface value
+ * @throws std::runtime_error If the value is not available
+ */
+template <class LoanedInterfaceT>
+inline double require_value(const LoanedInterfaceT& iface)
+{
+  auto opt = try_get_value(iface);
+  if (!opt) {
+    throw std::runtime_error("State interface value not available");
+  }
+  return *opt;
+}
+
+/**
  * @brief Compile-time trait to detect the presence of try_publish(msg).
  *
  * This is used to distinguish between newer realtime publisher APIs

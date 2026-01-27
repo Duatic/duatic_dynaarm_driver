@@ -135,22 +135,15 @@ PIDTuner::on_activate([[maybe_unused]] const rclcpp_lifecycle::State& previous_s
   const auto joint_size = params_.joints.size();
   auto&& node = get_node();
   for (std::size_t i = 0; i < joint_size; i++) {
-    const std::string param_name_base = params_.joints[i] + "/";
+    const std::string joint_name = params_.joints[i];
+
+    const std::string param_name_base = joint_name + "/";
     const std::string p_gain_param = param_name_base + "p_gain";
     const std::string i_gain_param = param_name_base + "i_gain";
     const std::string d_gain_param = param_name_base + "d_gain";
 
-    auto set_param = [&node, this, &joint_name = params_.joints[i]](
-                         const std::string& name, const CommandInterfaceReference& interface) -> bool {
-      auto current_opt = dynaarm_controllers::compat::try_get_value(interface.get());
-
-      if (!current_opt) {
-        RCLCPP_ERROR(get_node()->get_logger(), "Failed to read command interface value for parameter '%s' (joint '%s')",
-                     name.c_str(), joint_name.c_str());
-        return false;
-      }
-
-      const double current = *current_opt;
+    auto set_param = [&node](const std::string& name, const CommandInterfaceReference& interface) {
+      const double current = dynaarm_controllers::compat::require_value(interface.get());
 
       if (!node->has_parameter(name)) {
         node->declare_parameter(name, current);
@@ -160,9 +153,16 @@ PIDTuner::on_activate([[maybe_unused]] const rclcpp_lifecycle::State& previous_s
       return true;
     };
 
-    set_param(p_gain_param, joint_p_gain_command_interfaces_[i]);
-    set_param(i_gain_param, joint_i_gain_command_interfaces_[i]);
-    set_param(d_gain_param, joint_d_gain_command_interfaces_[i]);
+    try {
+      set_param(p_gain_param, joint_p_gain_command_interfaces_[i]);
+      set_param(i_gain_param, joint_i_gain_command_interfaces_[i]);
+      set_param(d_gain_param, joint_d_gain_command_interfaces_[i]);
+    } catch (const std::exception& e) {
+      RCLCPP_ERROR(get_node()->get_logger(),
+                   "Failed to read command interface value while initializing PID params for joint '%s': %s",
+                   joint_name.c_str(), e.what());
+      return controller_interface::CallbackReturn::ERROR;
+    }
   }
 
   return controller_interface::CallbackReturn::SUCCESS;

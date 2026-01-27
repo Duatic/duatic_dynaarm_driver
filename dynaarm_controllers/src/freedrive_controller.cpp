@@ -144,29 +144,15 @@ FreeDriveController::on_activate([[maybe_unused]] const rclcpp_lifecycle::State&
   const std::size_t joint_count = joint_position_state_interfaces_.size();
   for (std::size_t i = 0; i < joint_count; i++) {
     Gains g;
-    auto p_opt = dynaarm_controllers::compat::try_get_value(joint_p_gain_command_interfaces_[i].get());
-    if (!p_opt) {
-      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read previous P gain for joint '%s'",
-                   params_.joints[i].c_str());
+    try {
+      g.p = dynaarm_controllers::compat::require_value(joint_p_gain_command_interfaces_[i].get());
+      g.i = dynaarm_controllers::compat::require_value(joint_i_gain_command_interfaces_[i].get());
+      g.d = dynaarm_controllers::compat::require_value(joint_d_gain_command_interfaces_[i].get());
+    } catch (const std::exception& e) {
+      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read previous PID gains for joint '%s': %s",
+                   params_.joints[i].c_str(), e.what());
       return controller_interface::CallbackReturn::ERROR;
     }
-    g.p = *p_opt;
-
-    auto i_opt = dynaarm_controllers::compat::try_get_value(joint_i_gain_command_interfaces_[i].get());
-    if (!i_opt) {
-      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read previous I gain for joint '%s'",
-                   params_.joints[i].c_str());
-      return controller_interface::CallbackReturn::ERROR;
-    }
-    g.i = *i_opt;
-
-    auto d_opt = dynaarm_controllers::compat::try_get_value(joint_d_gain_command_interfaces_[i].get());
-    if (!d_opt) {
-      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read previous D gain for joint '%s'",
-                   params_.joints[i].c_str());
-      return controller_interface::CallbackReturn::ERROR;
-    }
-    g.d = *d_opt;
     previous_gains_.emplace_back(g);
 
     RCLCPP_DEBUG_STREAM(get_node()->get_logger(),
@@ -222,14 +208,15 @@ controller_interface::return_type FreeDriveController::update([[maybe_unused]] c
   // Never the less we command the current joint position. This is only important when switching from this controller to
   // another one
   for (std::size_t i = 0; i < joint_count; i++) {
-    auto pos_opt = dynaarm_controllers::compat::try_get_value(joint_position_state_interfaces_.at(i).get());
+    double current_joint_position;
 
-    if (!pos_opt) {
-      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read joint position for '%s'", params_.joints[i].c_str());
+    try {
+      current_joint_position = dynaarm_controllers::compat::require_value(joint_position_state_interfaces_.at(i).get());
+    } catch (const std::exception& e) {
+      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read joint position for '%s': %s", params_.joints[i].c_str(),
+                   e.what());
       return controller_interface::return_type::ERROR;
     }
-
-    const double current_joint_position = *pos_opt;
 
     const bool success = joint_position_command_interfaces_.at(i).get().set_value(current_joint_position);
 

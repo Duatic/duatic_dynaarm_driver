@@ -206,89 +206,35 @@ controller_interface::return_type StatusBroadcaster::update(const rclcpp::Time& 
   for (std::size_t i = 0; i < params_.joints.size(); i++) {
     DriveState drive_state_msg;
 
-    auto pos_opt = dynaarm_controllers::compat::try_get_value(joint_position_interfaces_.at(i).get());
-    if (!pos_opt) {
-      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read joint_position for joint '%s'", params_.joints[i].c_str());
-      return controller_interface::return_type::ERROR;
-    }
-    drive_state_msg.joint_position = *pos_opt;
+    try {
+      drive_state_msg.joint_position =
+          dynaarm_controllers::compat::require_value(joint_position_interfaces_.at(i).get());
+      drive_state_msg.joint_velocity =
+          dynaarm_controllers::compat::require_value(joint_velocity_interfaces_.at(i).get());
+      drive_state_msg.joint_effort = dynaarm_controllers::compat::require_value(joint_effort_interfaces_.at(i).get());
 
-    auto vel_opt = dynaarm_controllers::compat::try_get_value(joint_velocity_interfaces_.at(i).get());
-    if (!vel_opt) {
-      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read joint_velocity for joint '%s'", params_.joints[i].c_str());
-      return controller_interface::return_type::ERROR;
-    }
-    drive_state_msg.joint_velocity = *vel_opt;
+      drive_state_msg.temperature_system =
+          dynaarm_controllers::compat::require_value(joint_temperature_system_interfaces_.at(i).get());
+      drive_state_msg.temperature_phase_a =
+          dynaarm_controllers::compat::require_value(joint_temperature_phase_a_interfaces_.at(i).get());
+      drive_state_msg.temperature_phase_b =
+          dynaarm_controllers::compat::require_value(joint_temperature_phase_b_interfaces_.at(i).get());
+      drive_state_msg.temperature_phase_c =
+          dynaarm_controllers::compat::require_value(joint_temperature_phase_c_interfaces_.at(i).get());
+      drive_state_msg.bus_voltage =
+          dynaarm_controllers::compat::require_value(joint_bus_voltage_interfaces_.at(i).get());
 
-    auto eff_opt = dynaarm_controllers::compat::try_get_value(joint_effort_interfaces_.at(i).get());
-    if (!eff_opt) {
-      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read joint_effort for joint '%s'", params_.joints[i].c_str());
+      drive_state_msg.joint_position_commanded =
+          dynaarm_controllers::compat::require_value(joint_position_commanded_interfaces_.at(i).get());
+      drive_state_msg.joint_velocity_commanded =
+          dynaarm_controllers::compat::require_value(joint_velocity_commanded_interfaces_.at(i).get());
+      drive_state_msg.joint_effort_commanded =
+          dynaarm_controllers::compat::require_value(joint_effort_commanded_interfaces_.at(i).get());
+    } catch (const std::exception& e) {
+      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read state interface values for joint '%s': %s",
+                   params_.joints[i].c_str(), e.what());
       return controller_interface::return_type::ERROR;
     }
-    drive_state_msg.joint_effort = *eff_opt;
-
-    auto ts_opt = dynaarm_controllers::compat::try_get_value(joint_temperature_system_interfaces_.at(i).get());
-    if (!ts_opt) {
-      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read temperature_system for joint '%s'",
-                   params_.joints[i].c_str());
-      return controller_interface::return_type::ERROR;
-    }
-    drive_state_msg.temperature_system = *ts_opt;
-
-    auto ta_opt = dynaarm_controllers::compat::try_get_value(joint_temperature_phase_a_interfaces_.at(i).get());
-    if (!ta_opt) {
-      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read temperature_phase_a for joint '%s'",
-                   params_.joints[i].c_str());
-      return controller_interface::return_type::ERROR;
-    }
-    drive_state_msg.temperature_phase_a = *ta_opt;
-
-    auto tb_opt = dynaarm_controllers::compat::try_get_value(joint_temperature_phase_b_interfaces_.at(i).get());
-    if (!tb_opt) {
-      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read temperature_phase_b for joint '%s'",
-                   params_.joints[i].c_str());
-      return controller_interface::return_type::ERROR;
-    }
-    drive_state_msg.temperature_phase_b = *tb_opt;
-
-    auto tc_opt = dynaarm_controllers::compat::try_get_value(joint_temperature_phase_c_interfaces_.at(i).get());
-    if (!tc_opt) {
-      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read temperature_phase_c for joint '%s'",
-                   params_.joints[i].c_str());
-      return controller_interface::return_type::ERROR;
-    }
-    drive_state_msg.temperature_phase_c = *tc_opt;
-
-    auto bv_opt = dynaarm_controllers::compat::try_get_value(joint_bus_voltage_interfaces_.at(i).get());
-    if (!bv_opt) {
-      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read bus_voltage for joint '%s'", params_.joints[i].c_str());
-      return controller_interface::return_type::ERROR;
-    }
-    drive_state_msg.bus_voltage = *bv_opt;
-
-    auto pc_opt = dynaarm_controllers::compat::try_get_value(joint_position_commanded_interfaces_.at(i).get());
-    if (!pc_opt) {
-      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read position_commanded for joint '%s'",
-                   params_.joints[i].c_str());
-      return controller_interface::return_type::ERROR;
-    }
-    drive_state_msg.joint_position_commanded = *pc_opt;
-
-    auto vc_opt = dynaarm_controllers::compat::try_get_value(joint_velocity_commanded_interfaces_.at(i).get());
-    if (!vc_opt) {
-      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read velocity_commanded for joint '%s'",
-                   params_.joints[i].c_str());
-      return controller_interface::return_type::ERROR;
-    }
-    drive_state_msg.joint_velocity_commanded = *vc_opt;
-
-    auto ec_opt = dynaarm_controllers::compat::try_get_value(joint_effort_commanded_interfaces_.at(i).get());
-    if (!ec_opt) {
-      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read effort_commanded for joint '%s'",
-                   params_.joints[i].c_str());
-      return controller_interface::return_type::ERROR;
-    }
-    drive_state_msg.joint_effort_commanded = *ec_opt;
 
     state_msg.states.emplace_back(drive_state_msg);
   }
