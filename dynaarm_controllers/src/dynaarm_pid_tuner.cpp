@@ -35,20 +35,24 @@
 namespace dynaarm_controllers::compat
 {
 template <typename T, typename = void>
-struct has_get_optional_double : std::false_type {};
+struct has_get_optional_double : std::false_type
+{
+};
 
 template <typename T>
 struct has_get_optional_double<T, std::void_t<decltype(std::declval<const T&>().template get_optional<double>())>>
-  : std::true_type {};
+  : std::true_type
+{
+};
 
 template <class LoanedInterfaceT>
-inline double get_value_or(const LoanedInterfaceT & iface, double fallback = 0.0)
+inline double get_value_or(const LoanedInterfaceT& iface, double fallback = 0.0)
 {
   if constexpr (has_get_optional_double<LoanedInterfaceT>::value) {
     auto v = iface.template get_optional<double>();  // Rolling
     return v ? *v : fallback;
   } else {
-    return iface.template get_value();               // Jazzy
+    return iface.template get_value();  // Jazzy
   }
 }
 }  // namespace dynaarm_controllers::compat
@@ -165,8 +169,7 @@ PIDTuner::on_activate([[maybe_unused]] const rclcpp_lifecycle::State& previous_s
     const std::string d_gain_param = param_name_base + "d_gain";
 
     auto set_param = [&node](const std::string& name, const CommandInterfaceReference& interface) {
-      const double current =
-          dynaarm_controllers::compat::get_value_or(interface.get(), 0.0);
+      const double current = dynaarm_controllers::compat::get_value_or(interface.get(), 0.0);
 
       if (!node->has_parameter(name)) {
         node->declare_parameter(name, current);
@@ -174,7 +177,6 @@ PIDTuner::on_activate([[maybe_unused]] const rclcpp_lifecycle::State& previous_s
         node->set_parameter(rclcpp::Parameter(name, current));
       }
     };
-
 
     set_param(p_gain_param, joint_p_gain_command_interfaces_[i]);
     set_param(i_gain_param, joint_i_gain_command_interfaces_[i]);
