@@ -157,7 +157,7 @@ PIDTuner::on_activate([[maybe_unused]] const rclcpp_lifecycle::State& previous_s
       set_param(p_gain_param, joint_p_gain_command_interfaces_[i]);
       set_param(i_gain_param, joint_i_gain_command_interfaces_[i]);
       set_param(d_gain_param, joint_d_gain_command_interfaces_[i]);
-    } catch (const std::exception& e) {
+    } catch (const dynaarm_controllers::exceptions::MissingInterfaceValue& e) {
       RCLCPP_ERROR(get_node()->get_logger(),
                    "Failed to read command interface value while initializing PID params for joint '%s': %s",
                    joint_name.c_str(), e.what());

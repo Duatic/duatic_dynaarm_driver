@@ -230,7 +230,7 @@ controller_interface::return_type StatusBroadcaster::update(const rclcpp::Time& 
           dynaarm_controllers::compat::require_value(joint_velocity_commanded_interfaces_.at(i).get());
       drive_state_msg.joint_effort_commanded =
           dynaarm_controllers::compat::require_value(joint_effort_commanded_interfaces_.at(i).get());
-    } catch (const std::exception& e) {
+    } catch (const dynaarm_controllers::exceptions::MissingInterfaceValue& e) {
       RCLCPP_ERROR(get_node()->get_logger(), "Failed to read state interface values for joint '%s': %s",
                    params_.joints[i].c_str(), e.what());
       return controller_interface::return_type::ERROR;
