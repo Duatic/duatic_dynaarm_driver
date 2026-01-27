@@ -30,6 +30,54 @@
 #include <controller_interface/helpers.hpp>
 #include <lifecycle_msgs/msg/state.hpp>
 
+#include <optional>
+#include <type_traits>
+#include <utility>
+
+namespace dynaarm_controllers::compat
+{
+// ---- get_value() (Jazzy) vs get_optional<double>() (Rolling) ----
+template <typename T, typename = void>
+struct has_get_optional_double : std::false_type
+{
+};
+
+template <typename T>
+struct has_get_optional_double<T, std::void_t<decltype(std::declval<const T&>().template get_optional<double>())>>
+  : std::true_type
+{
+};
+
+template <class LoanedInterfaceT>
+inline double get_value_or(const LoanedInterfaceT& iface, double fallback = 0.0)
+{
+  if constexpr (has_get_optional_double<LoanedInterfaceT>::value) {
+    auto v = iface.template get_optional<double>();  // Rolling
+    return v ? *v : fallback;
+  } else {
+    return iface.template get_value();  // Jazzy
+  }
+}
+
+// ---- RealtimePublisher API compat: Rolling has try_publish(msg) ----
+template <typename PubT, typename MsgT>
+inline void publish_rt(PubT& pub, const MsgT& msg)
+{
+  // If PubT has try_publish(msg), use it (Rolling)
+  // Otherwise fall back to trylock/msg_/unlockAndPublish (older)
+  if constexpr (std::is_same_v<decltype(std::declval<PubT>()->try_publish(msg)), bool>) {
+    (void)pub->try_publish(msg);
+  } else if constexpr (std::is_same_v<decltype(std::declval<PubT>()->try_publish(msg)), void>) {
+    pub->try_publish(msg);
+  } else {
+    if (pub->trylock()) {
+      pub->msg_ = msg;
+      pub->unlockAndPublish();
+    }
+  }
+}
+}  // namespace dynaarm_controllers::compat
+
 namespace dynaarm_controllers
 {
 
@@ -171,7 +219,8 @@ GravityCompensationController::on_activate([[maybe_unused]] const rclcpp_lifecyc
 
   // Obtain the joint positions during startup which we need for the startup jump check
   for (std::size_t i = 0; i < joint_position_state_interfaces_.size(); i++) {
-    initial_joint_positions_.push_back(joint_position_state_interfaces_.at(i).get().get_value());
+    initial_joint_positions_.push_back(
+        dynaarm_controllers::compat::get_value_or(joint_position_state_interfaces_.at(i).get(), 0.0));
   }
   active_ = true;
 
@@ -219,9 +268,14 @@ controller_interface::return_type GravityCompensationController::update([[maybe_
       return controller_interface::return_type::ERROR;
     }
     // Pinocchio joint index starts at 1, q/v index is idx-1
-    q[pinocchio_model_.joints[idx].idx_q()] = joint_position_state_interfaces_.at(i).get().get_value();
-    v[pinocchio_model_.joints[idx].idx_v()] = joint_velocity_state_interfaces_.at(i).get().get_value();
-    a[pinocchio_model_.joints[idx].idx_v()] = joint_acceleration_state_interfaces_.at(i).get().get_value();
+    q[pinocchio_model_.joints[idx].idx_q()] =
+        dynaarm_controllers::compat::get_value_or(joint_position_state_interfaces_.at(i).get(), 0.0);
+
+    v[pinocchio_model_.joints[idx].idx_v()] =
+        dynaarm_controllers::compat::get_value_or(joint_velocity_state_interfaces_.at(i).get(), 0.0);
+
+    a[pinocchio_model_.joints[idx].idx_v()] =
+        dynaarm_controllers::compat::get_value_or(joint_acceleration_state_interfaces_.at(i).get(), 0.0);
   }
 
   // Perform startup jump check if enabled
@@ -230,8 +284,9 @@ controller_interface::return_type GravityCompensationController::update([[maybe_
   if (params_.enable_startup_check && (time - activation_time_ < rclcpp::Duration(std::chrono::milliseconds(500)))) {
     bool has_jump = false;
     for (std::size_t i = 0; i < joint_count; i++) {
-      if (std::abs(joint_position_state_interfaces_.at(i).get().get_value() - initial_joint_positions_.at(i)) >
-          params_.max_jump_startup) {
+      const double pos_now = dynaarm_controllers::compat::get_value_or(joint_position_state_interfaces_.at(i).get(),
+                                                                       initial_joint_positions_.at(i));
+      if (std::abs(pos_now - initial_joint_positions_.at(i)) > params_.max_jump_startup) {
         has_jump = true;
       }
     }
@@ -264,9 +319,8 @@ controller_interface::return_type GravityCompensationController::update([[maybe_
   }
   // and we try to have our realtime publisher publish the message
   // if this doesn't succeed - well it will probably next time
-  if (params_.enable_state_topic && status_pub_rt_->trylock()) {
-    status_pub_rt_->msg_ = state_msg;
-    status_pub_rt_->unlockAndPublish();
+  if (params_.enable_state_topic) {
+    dynaarm_controllers::compat::publish_rt(status_pub_rt_, state_msg);
   }
 
   return controller_interface::return_type::OK;
