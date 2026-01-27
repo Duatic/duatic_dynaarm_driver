@@ -8,24 +8,19 @@ namespace dynaarm_controllers::compat
 {
 
 template <typename T, typename = void>
-struct has_get_optional_double : std::false_type
-{
-};
+struct has_get_optional_double : std::false_type {};
 
 template <typename T>
 struct has_get_optional_double<T, std::void_t<decltype(std::declval<const T&>().template get_optional<double>())>>
-  : std::true_type
-{
-};
+  : std::true_type {};
 
 template <class LoanedInterfaceT>
-inline double get_value_or(const LoanedInterfaceT& iface, double fallback = 0.0)
+inline std::optional<double> try_get_value(const LoanedInterfaceT & iface)
 {
   if constexpr (has_get_optional_double<LoanedInterfaceT>::value) {
-    auto v = iface.template get_optional<double>();
-    return v ? *v : fallback;
+    return iface.template get_optional<double>();   // Rolling
   } else {
-    return iface.template get_value();
+    return iface.template get_value();              // Jazzy (always valid)
   }
 }
 

@@ -172,8 +172,11 @@ GravityCompensationController::on_activate([[maybe_unused]] const rclcpp_lifecyc
 
   // Obtain the joint positions during startup which we need for the startup jump check
   for (std::size_t i = 0; i < joint_position_state_interfaces_.size(); i++) {
-    initial_joint_positions_.push_back(
-        dynaarm_controllers::compat::get_value_or(joint_position_state_interfaces_.at(i).get(), 0.0));
+    auto pos_opt = dynaarm_controllers::compat::try_get_value(joint_position_state_interfaces_.at(i).get());
+
+    if (!pos_opt) {RCLCPP_ERROR(get_node()->get_logger(), "Failed to read initial joint position for joint '%s'", params_.joints[i].c_str());
+      return controller_interface::CallbackReturn::ERROR;
+    }
   }
   active_ = true;
 
@@ -221,24 +224,44 @@ controller_interface::return_type GravityCompensationController::update([[maybe_
       return controller_interface::return_type::ERROR;
     }
     // Pinocchio joint index starts at 1, q/v index is idx-1
-    q[pinocchio_model_.joints[idx].idx_q()] =
-        dynaarm_controllers::compat::get_value_or(joint_position_state_interfaces_.at(i).get(), 0.0);
+    auto pos_opt = dynaarm_controllers::compat::try_get_value(joint_position_state_interfaces_.at(i).get());
+    if (!pos_opt) {
+      RCLCPP_ERROR(get_node()->get_logger(),"Failed to read position for joint '%s'", joint_name.c_str());
+      return controller_interface::return_type::ERROR;
+    }
 
-    v[pinocchio_model_.joints[idx].idx_v()] =
-        dynaarm_controllers::compat::get_value_or(joint_velocity_state_interfaces_.at(i).get(), 0.0);
+    auto vel_opt = dynaarm_controllers::compat::try_get_value(joint_velocity_state_interfaces_.at(i).get());
+    if (!vel_opt) {RCLCPP_ERROR(get_node()->get_logger(), "Failed to read velocity for joint '%s'", joint_name.c_str());
+      return controller_interface::return_type::ERROR;
+    }
 
-    a[pinocchio_model_.joints[idx].idx_v()] =
-        dynaarm_controllers::compat::get_value_or(joint_acceleration_state_interfaces_.at(i).get(), 0.0);
+    auto acc_opt = dynaarm_controllers::compat::try_get_value(joint_acceleration_state_interfaces_.at(i).get());
+    if (!acc_opt) {RCLCPP_ERROR(get_node()->get_logger(), "Failed to read acceleration for joint '%s'", joint_name.c_str());
+      return controller_interface::return_type::ERROR;
+    }
+
+    // Pinocchio joint index starts at 1, q/v index is idx-1
+    q[pinocchio_model_.joints[idx].idx_q()] = *pos_opt;
+    v[pinocchio_model_.joints[idx].idx_v()] = *vel_opt;
+    a[pinocchio_model_.joints[idx].idx_v()] = *acc_opt;
   }
-
   // Perform startup jump check if enabled
   // A jump might happen if the configured urdf does not match the hardware
   // So for the first 0.5s after activation we check if there was a jump of more than (default 0.5) x rad
   if (params_.enable_startup_check && (time - activation_time_ < rclcpp::Duration(std::chrono::milliseconds(500)))) {
     bool has_jump = false;
     for (std::size_t i = 0; i < joint_count; i++) {
-      const double pos_now = dynaarm_controllers::compat::get_value_or(joint_position_state_interfaces_.at(i).get(),
-                                                                       initial_joint_positions_.at(i));
+      auto pos_opt = dynaarm_controllers::compat::try_get_value(
+        joint_position_state_interfaces_.at(i).get());
+
+      if (!pos_opt) {
+        RCLCPP_ERROR(get_node()->get_logger(),
+                    "Startup check failed: no position value for joint '%s'",
+                    params_.joints[i].c_str());
+        return controller_interface::return_type::ERROR;
+      }
+
+      const double pos_now = *pos_opt;
       if (std::abs(pos_now - initial_joint_positions_.at(i)) > params_.max_jump_startup) {
         has_jump = true;
       }

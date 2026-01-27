@@ -441,16 +441,27 @@ CartesianPoseController::on_activate([[maybe_unused]] const rclcpp_lifecycle::St
     Eigen::VectorXd v = Eigen::VectorXd::Zero(pinocchio_model_.nv);
 
     for (std::size_t i = 0; i < joint_count; i++) {
-      const std::string& joint_name = params_.joints[i];
+      const std::string & joint_name = params_.joints[i];
       auto idx = pinocchio_model_.getJointId(joint_name);
       if (idx == 0) {
         RCLCPP_ERROR(get_node()->get_logger(), "Joint '%s' not found in Pinocchio model.", joint_name.c_str());
         return controller_interface::CallbackReturn::FAILURE;
       }
-      q[pinocchio_model_.joints[idx].idx_q()] =
-          dynaarm_controllers::compat::get_value_or(joint_position_state_interfaces_.at(i).get(), 0.0);
-      v[pinocchio_model_.joints[idx].idx_v()] =
-          dynaarm_controllers::compat::get_value_or(joint_velocity_state_interfaces_.at(i).get(), 0.0);
+
+      auto pos_opt = dynaarm_controllers::compat::try_get_value(joint_position_state_interfaces_.at(i).get());
+      if (!pos_opt) {
+        RCLCPP_ERROR(get_node()->get_logger(), "Failed to read position for joint '%s'", joint_name.c_str());
+        return controller_interface::CallbackReturn::ERROR;
+      }
+
+      auto vel_opt = dynaarm_controllers::compat::try_get_value(joint_velocity_state_interfaces_.at(i).get());
+      if (!vel_opt) {
+        RCLCPP_ERROR(get_node()->get_logger(), "Failed to read velocity for joint '%s'", joint_name.c_str());
+        return controller_interface::CallbackReturn::ERROR;
+      }
+
+      q[pinocchio_model_.joints[idx].idx_q()] = *pos_opt;
+      v[pinocchio_model_.joints[idx].idx_v()] = *vel_opt;
     }
 
     // Update snapshot for worker
@@ -541,20 +552,36 @@ controller_interface::return_type CartesianPoseController::update([[maybe_unused
   Eigen::VectorXd a = Eigen::VectorXd::Zero(pinocchio_model_.nv);
   // Map: Pinocchio joint name -> index in q/v
   for (std::size_t i = 0; i < joint_count; i++) {
-    const std::string& joint_name = params_.joints[i];
+    const std::string & joint_name = params_.joints[i];
     auto idx = pinocchio_model_.getJointId(joint_name);
     if (idx == 0) {
       RCLCPP_ERROR(get_node()->get_logger(), "Joint '%s' not found in Pinocchio model.", joint_name.c_str());
       return controller_interface::return_type::ERROR;
     }
-    // Pinocchio joint index starts at 1, q/v index is idx-1
-    q[pinocchio_model_.joints[idx].idx_q()] =
-        dynaarm_controllers::compat::get_value_or(joint_position_state_interfaces_.at(i).get(), 0.0);
-    v[pinocchio_model_.joints[idx].idx_v()] =
-        dynaarm_controllers::compat::get_value_or(joint_velocity_state_interfaces_.at(i).get(), 0.0);
-    a[pinocchio_model_.joints[idx].idx_v()] =
-        dynaarm_controllers::compat::get_value_or(joint_acceleration_state_interfaces_.at(i).get(), 0.0);
+
+    auto pos_opt = dynaarm_controllers::compat::try_get_value(joint_position_state_interfaces_.at(i).get());
+    if (!pos_opt) {
+      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read position for joint '%s'", joint_name.c_str());
+      return controller_interface::return_type::ERROR;
+    }
+
+    auto vel_opt = dynaarm_controllers::compat::try_get_value(joint_velocity_state_interfaces_.at(i).get());
+    if (!vel_opt) {
+      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read velocity for joint '%s'", joint_name.c_str());
+      return controller_interface::return_type::ERROR;
+    }
+
+    auto acc_opt = dynaarm_controllers::compat::try_get_value(joint_acceleration_state_interfaces_.at(i).get());
+    if (!acc_opt) {
+      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read acceleration for joint '%s'", joint_name.c_str());
+      return controller_interface::return_type::ERROR;
+    }
+
+    q[pinocchio_model_.joints[idx].idx_q()] = *pos_opt;
+    v[pinocchio_model_.joints[idx].idx_v()] = *vel_opt;
+    a[pinocchio_model_.joints[idx].idx_v()] = *acc_opt;
   }
+
 
   // Make a snapshot of q for the IK worker
   {
@@ -634,8 +661,14 @@ controller_interface::return_type CartesianPoseController::update([[maybe_unused
       max_delta_norm = std::max(max_delta_norm, std::abs(delta));
 
       // Read currently commanded position (may be last commanded value)
-      double cmd_current =
-          dynaarm_controllers::compat::get_value_or(joint_position_command_interfaces_.at(i).get(), q_current_joint);
+      auto cmd_current_opt = dynaarm_controllers::compat::try_get_value(joint_position_command_interfaces_.at(i).get());
+
+      if (!cmd_current_opt) {
+        RCLCPP_ERROR(get_node()->get_logger(), "Failed to read commanded position for joint '%s'", params_.joints[i].c_str());
+        return controller_interface::return_type::ERROR;
+      }
+
+      const double cmd_current = *cmd_current_opt;
 
       // Clamp change per update to MAX_JOINT_STEP to avoid instantaneous jumps
       double applied = q_target_joint;
