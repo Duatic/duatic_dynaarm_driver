@@ -29,54 +29,7 @@
 #include <hardware_interface/types/hardware_interface_type_values.hpp>
 #include <controller_interface/helpers.hpp>
 #include <lifecycle_msgs/msg/state.hpp>
-
-#include <optional>
-#include <type_traits>
-#include <utility>
-
-namespace dynaarm_controllers::compat
-{
-// ---- get_value() (Jazzy) vs get_optional<double>() (Rolling) ----
-template <typename T, typename = void>
-struct has_get_optional_double : std::false_type
-{
-};
-
-template <typename T>
-struct has_get_optional_double<T, std::void_t<decltype(std::declval<const T&>().template get_optional<double>())>>
-  : std::true_type
-{
-};
-
-template <class LoanedInterfaceT>
-inline double get_value_or(const LoanedInterfaceT& iface, double fallback = 0.0)
-{
-  if constexpr (has_get_optional_double<LoanedInterfaceT>::value) {
-    auto v = iface.template get_optional<double>();  // Rolling
-    return v ? *v : fallback;
-  } else {
-    return iface.template get_value();  // Jazzy
-  }
-}
-
-// ---- RealtimePublisher API compat: Rolling has try_publish(msg) ----
-template <typename PubT, typename MsgT>
-inline void publish_rt(PubT& pub, const MsgT& msg)
-{
-  // If PubT has try_publish(msg), use it (Rolling)
-  // Otherwise fall back to trylock/msg_/unlockAndPublish (older)
-  if constexpr (std::is_same_v<decltype(std::declval<PubT>()->try_publish(msg)), bool>) {
-    (void)pub->try_publish(msg);
-  } else if constexpr (std::is_same_v<decltype(std::declval<PubT>()->try_publish(msg)), void>) {
-    pub->try_publish(msg);
-  } else {
-    if (pub->trylock()) {
-      pub->msg_ = msg;
-      pub->unlockAndPublish();
-    }
-  }
-}
-}  // namespace dynaarm_controllers::compat
+#include <dynaarm_controllers/ros2_control_compat.hpp>
 
 namespace dynaarm_controllers
 {

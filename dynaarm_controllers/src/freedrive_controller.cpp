@@ -23,39 +23,11 @@
  */
 
 #include <dynaarm_controllers/freedrive_controller.hpp>
+#include <dynaarm_controllers/ros2_control_compat.hpp>
 
 #include <hardware_interface/types/hardware_interface_type_values.hpp>
 #include <controller_interface/helpers.hpp>
 #include <lifecycle_msgs/msg/state.hpp>
-
-#include <optional>
-#include <type_traits>
-#include <utility>
-
-namespace dynaarm_controllers::compat
-{
-template <typename T, typename = void>
-struct has_get_optional_double : std::false_type
-{
-};
-
-template <typename T>
-struct has_get_optional_double<T, std::void_t<decltype(std::declval<const T&>().template get_optional<double>())>>
-  : std::true_type
-{
-};
-
-template <class LoanedInterfaceT>
-inline double get_value_or(const LoanedInterfaceT& iface, double fallback = 0.0)
-{
-  if constexpr (has_get_optional_double<LoanedInterfaceT>::value) {
-    auto v = iface.template get_optional<double>();  // Rolling
-    return v ? *v : fallback;
-  } else {
-    return iface.template get_value();  // Jazzy
-  }
-}
-}  // namespace dynaarm_controllers::compat
 
 namespace dynaarm_controllers
 {
