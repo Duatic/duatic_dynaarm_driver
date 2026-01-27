@@ -18,7 +18,9 @@ namespace dynaarm_controllers::compat
  * @tparam T Interface type to inspect
  */
 template <typename T, typename = void>
-struct has_get_optional_double : std::false_type {};
+struct has_get_optional_double : std::false_type
+{
+};
 
 /**
  * @brief Specialization for interfaces that implement get_optional<double>().
@@ -27,7 +29,9 @@ struct has_get_optional_double : std::false_type {};
  */
 template <typename T>
 struct has_get_optional_double<T, std::void_t<decltype(std::declval<const T&>().template get_optional<double>())>>
-  : std::true_type {};
+  : std::true_type
+{
+};
 
 /**
  * @brief Retrieve the current value from a loaned state or command interface.
@@ -42,12 +46,12 @@ struct has_get_optional_double<T, std::void_t<decltype(std::declval<const T&>().
  * @return std::optional<double> containing the value if available
  */
 template <class LoanedInterfaceT>
-inline std::optional<double> try_get_value(const LoanedInterfaceT & iface)
+inline std::optional<double> try_get_value(const LoanedInterfaceT& iface)
 {
   if constexpr (has_get_optional_double<LoanedInterfaceT>::value) {
-    return iface.template get_optional<double>();   // Rolling
+    return iface.template get_optional<double>();  // Rolling
   } else {
-    return iface.template get_value();              // Jazzy (always valid)
+    return iface.template get_value();  // Jazzy (always valid)
   }
 }
 
@@ -61,7 +65,9 @@ inline std::optional<double> try_get_value(const LoanedInterfaceT & iface)
  * @tparam MsgT Message type
  */
 template <typename PubT, typename MsgT, typename = void>
-struct has_try_publish : std::false_type {};
+struct has_try_publish : std::false_type
+{
+};
 
 /**
  * @brief Specialization for publishers providing try_publish(msg).
@@ -69,7 +75,9 @@ struct has_try_publish : std::false_type {};
 template <typename PubT, typename MsgT>
 struct has_try_publish<PubT, MsgT,
                        std::void_t<decltype(std::declval<PubT>()->try_publish(std::declval<const MsgT&>()))>>
-  : std::true_type {};
+  : std::true_type
+{
+};
 
 /**
  * @brief Publish a message using a realtime-safe publisher.

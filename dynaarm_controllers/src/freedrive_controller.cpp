@@ -145,19 +145,25 @@ FreeDriveController::on_activate([[maybe_unused]] const rclcpp_lifecycle::State&
   for (std::size_t i = 0; i < joint_count; i++) {
     Gains g;
     auto p_opt = dynaarm_controllers::compat::try_get_value(joint_p_gain_command_interfaces_[i].get());
-    if (!p_opt) {RCLCPP_ERROR(get_node()->get_logger(), "Failed to read previous P gain for joint '%s'", params_.joints[i].c_str());
+    if (!p_opt) {
+      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read previous P gain for joint '%s'",
+                   params_.joints[i].c_str());
       return controller_interface::CallbackReturn::ERROR;
     }
     g.p = *p_opt;
 
     auto i_opt = dynaarm_controllers::compat::try_get_value(joint_i_gain_command_interfaces_[i].get());
-    if (!i_opt) {RCLCPP_ERROR(get_node()->get_logger(), "Failed to read previous I gain for joint '%s'", params_.joints[i].c_str());
+    if (!i_opt) {
+      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read previous I gain for joint '%s'",
+                   params_.joints[i].c_str());
       return controller_interface::CallbackReturn::ERROR;
     }
     g.i = *i_opt;
 
     auto d_opt = dynaarm_controllers::compat::try_get_value(joint_d_gain_command_interfaces_[i].get());
-    if (!d_opt) {RCLCPP_ERROR(get_node()->get_logger(), "Failed to read previous D gain for joint '%s'", params_.joints[i].c_str());
+    if (!d_opt) {
+      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read previous D gain for joint '%s'",
+                   params_.joints[i].c_str());
       return controller_interface::CallbackReturn::ERROR;
     }
     g.d = *d_opt;
@@ -218,7 +224,8 @@ controller_interface::return_type FreeDriveController::update([[maybe_unused]] c
   for (std::size_t i = 0; i < joint_count; i++) {
     auto pos_opt = dynaarm_controllers::compat::try_get_value(joint_position_state_interfaces_.at(i).get());
 
-    if (!pos_opt) {RCLCPP_ERROR(get_node()->get_logger(), "Failed to read joint position for '%s'", params_.joints[i].c_str());
+    if (!pos_opt) {
+      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read joint position for '%s'", params_.joints[i].c_str());
       return controller_interface::return_type::ERROR;
     }
 

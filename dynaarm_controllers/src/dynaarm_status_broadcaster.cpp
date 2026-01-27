@@ -124,49 +124,60 @@ StatusBroadcaster::on_activate([[maybe_unused]] const rclcpp_lifecycle::State& p
   joint_bus_voltage_interfaces_.clear();
 
   // get the actual interface in an ordered way (same order as the joints parameter)
-  if (!controller_interface::get_ordered_interfaces(state_interfaces_, params_.joints, hardware_interface::HW_IF_POSITION, joint_position_interfaces_)) {
+  if (!controller_interface::get_ordered_interfaces(state_interfaces_, params_.joints,
+                                                    hardware_interface::HW_IF_POSITION, joint_position_interfaces_)) {
     RCLCPP_WARN(get_node()->get_logger(), "Could not get ordered interfaces - position");
     return controller_interface::CallbackReturn::FAILURE;
   }
-  if (!controller_interface::get_ordered_interfaces(state_interfaces_, params_.joints, hardware_interface::HW_IF_VELOCITY, joint_velocity_interfaces_)) {
+  if (!controller_interface::get_ordered_interfaces(state_interfaces_, params_.joints,
+                                                    hardware_interface::HW_IF_VELOCITY, joint_velocity_interfaces_)) {
     RCLCPP_WARN(get_node()->get_logger(), "Could not get ordered interfaces - velocity");
     return controller_interface::CallbackReturn::FAILURE;
   }
-  if (!controller_interface::get_ordered_interfaces(state_interfaces_, params_.joints, hardware_interface::HW_IF_EFFORT, joint_effort_interfaces_)) {
+  if (!controller_interface::get_ordered_interfaces(state_interfaces_, params_.joints, hardware_interface::HW_IF_EFFORT,
+                                                    joint_effort_interfaces_)) {
     RCLCPP_WARN(get_node()->get_logger(), "Could not get ordered interfaces - effort");
     return controller_interface::CallbackReturn::FAILURE;
   }
 
-  if (!controller_interface::get_ordered_interfaces(state_interfaces_, params_.joints, "position_commanded", joint_position_commanded_interfaces_)) {
+  if (!controller_interface::get_ordered_interfaces(state_interfaces_, params_.joints, "position_commanded",
+                                                    joint_position_commanded_interfaces_)) {
     RCLCPP_WARN(get_node()->get_logger(), "Could not get ordered interfaces - position_commanded");
     return controller_interface::CallbackReturn::FAILURE;
   }
-  if (!controller_interface::get_ordered_interfaces(state_interfaces_, params_.joints, "velocity_commanded", joint_velocity_commanded_interfaces_)) {
+  if (!controller_interface::get_ordered_interfaces(state_interfaces_, params_.joints, "velocity_commanded",
+                                                    joint_velocity_commanded_interfaces_)) {
     RCLCPP_WARN(get_node()->get_logger(), "Could not get ordered interfaces - velocity_commanded");
     return controller_interface::CallbackReturn::FAILURE;
   }
-  if (!controller_interface::get_ordered_interfaces(state_interfaces_, params_.joints, "effort_commanded", joint_effort_commanded_interfaces_)) {
+  if (!controller_interface::get_ordered_interfaces(state_interfaces_, params_.joints, "effort_commanded",
+                                                    joint_effort_commanded_interfaces_)) {
     RCLCPP_WARN(get_node()->get_logger(), "Could not get ordered interfaces - effort_commanded");
     return controller_interface::CallbackReturn::FAILURE;
   }
 
-  if (!controller_interface::get_ordered_interfaces(state_interfaces_, params_.joints, "motor_temperature_system", joint_temperature_system_interfaces_)) {
+  if (!controller_interface::get_ordered_interfaces(state_interfaces_, params_.joints, "motor_temperature_system",
+                                                    joint_temperature_system_interfaces_)) {
     RCLCPP_WARN(get_node()->get_logger(), "Could not get ordered interfaces - motor_temperature_system");
     return controller_interface::CallbackReturn::FAILURE;
   }
-  if (!controller_interface::get_ordered_interfaces(state_interfaces_, params_.joints, "motor_temperature_coil_A", joint_temperature_phase_a_interfaces_)) {
+  if (!controller_interface::get_ordered_interfaces(state_interfaces_, params_.joints, "motor_temperature_coil_A",
+                                                    joint_temperature_phase_a_interfaces_)) {
     RCLCPP_WARN(get_node()->get_logger(), "Could not get ordered interfaces - motor_temperature_coil_A");
     return controller_interface::CallbackReturn::FAILURE;
   }
-  if (!controller_interface::get_ordered_interfaces(state_interfaces_, params_.joints, "motor_temperature_coil_B", joint_temperature_phase_b_interfaces_)) {
+  if (!controller_interface::get_ordered_interfaces(state_interfaces_, params_.joints, "motor_temperature_coil_B",
+                                                    joint_temperature_phase_b_interfaces_)) {
     RCLCPP_WARN(get_node()->get_logger(), "Could not get ordered interfaces - motor_temperature_coil_B");
     return controller_interface::CallbackReturn::FAILURE;
   }
-  if (!controller_interface::get_ordered_interfaces(state_interfaces_, params_.joints, "motor_temperature_coil_C", joint_temperature_phase_c_interfaces_)) {
+  if (!controller_interface::get_ordered_interfaces(state_interfaces_, params_.joints, "motor_temperature_coil_C",
+                                                    joint_temperature_phase_c_interfaces_)) {
     RCLCPP_WARN(get_node()->get_logger(), "Could not get ordered interfaces - motor_temperature_coil_C");
     return controller_interface::CallbackReturn::FAILURE;
   }
-  if (!controller_interface::get_ordered_interfaces(state_interfaces_, params_.joints, "motor_bus_voltage", joint_bus_voltage_interfaces_)) {
+  if (!controller_interface::get_ordered_interfaces(state_interfaces_, params_.joints, "motor_bus_voltage",
+                                                    joint_bus_voltage_interfaces_)) {
     RCLCPP_WARN(get_node()->get_logger(), "Could not get ordered interfaces - motor_bus_voltage");
     return controller_interface::CallbackReturn::FAILURE;
   }
@@ -197,88 +208,84 @@ controller_interface::return_type StatusBroadcaster::update(const rclcpp::Time& 
 
     auto pos_opt = dynaarm_controllers::compat::try_get_value(joint_position_interfaces_.at(i).get());
     if (!pos_opt) {
-      RCLCPP_ERROR(get_node()->get_logger(),
-                  "Failed to read joint_position for joint '%s'", params_.joints[i].c_str());
+      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read joint_position for joint '%s'", params_.joints[i].c_str());
       return controller_interface::return_type::ERROR;
     }
     drive_state_msg.joint_position = *pos_opt;
 
     auto vel_opt = dynaarm_controllers::compat::try_get_value(joint_velocity_interfaces_.at(i).get());
     if (!vel_opt) {
-      RCLCPP_ERROR(get_node()->get_logger(),
-                  "Failed to read joint_velocity for joint '%s'", params_.joints[i].c_str());
+      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read joint_velocity for joint '%s'", params_.joints[i].c_str());
       return controller_interface::return_type::ERROR;
     }
     drive_state_msg.joint_velocity = *vel_opt;
 
     auto eff_opt = dynaarm_controllers::compat::try_get_value(joint_effort_interfaces_.at(i).get());
     if (!eff_opt) {
-      RCLCPP_ERROR(get_node()->get_logger(),
-                  "Failed to read joint_effort for joint '%s'", params_.joints[i].c_str());
+      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read joint_effort for joint '%s'", params_.joints[i].c_str());
       return controller_interface::return_type::ERROR;
     }
     drive_state_msg.joint_effort = *eff_opt;
 
     auto ts_opt = dynaarm_controllers::compat::try_get_value(joint_temperature_system_interfaces_.at(i).get());
     if (!ts_opt) {
-      RCLCPP_ERROR(get_node()->get_logger(),
-                  "Failed to read temperature_system for joint '%s'", params_.joints[i].c_str());
+      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read temperature_system for joint '%s'",
+                   params_.joints[i].c_str());
       return controller_interface::return_type::ERROR;
     }
     drive_state_msg.temperature_system = *ts_opt;
 
     auto ta_opt = dynaarm_controllers::compat::try_get_value(joint_temperature_phase_a_interfaces_.at(i).get());
     if (!ta_opt) {
-      RCLCPP_ERROR(get_node()->get_logger(),
-                  "Failed to read temperature_phase_a for joint '%s'", params_.joints[i].c_str());
+      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read temperature_phase_a for joint '%s'",
+                   params_.joints[i].c_str());
       return controller_interface::return_type::ERROR;
     }
     drive_state_msg.temperature_phase_a = *ta_opt;
 
     auto tb_opt = dynaarm_controllers::compat::try_get_value(joint_temperature_phase_b_interfaces_.at(i).get());
     if (!tb_opt) {
-      RCLCPP_ERROR(get_node()->get_logger(),
-                  "Failed to read temperature_phase_b for joint '%s'", params_.joints[i].c_str());
+      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read temperature_phase_b for joint '%s'",
+                   params_.joints[i].c_str());
       return controller_interface::return_type::ERROR;
     }
     drive_state_msg.temperature_phase_b = *tb_opt;
 
     auto tc_opt = dynaarm_controllers::compat::try_get_value(joint_temperature_phase_c_interfaces_.at(i).get());
     if (!tc_opt) {
-      RCLCPP_ERROR(get_node()->get_logger(),
-                  "Failed to read temperature_phase_c for joint '%s'", params_.joints[i].c_str());
+      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read temperature_phase_c for joint '%s'",
+                   params_.joints[i].c_str());
       return controller_interface::return_type::ERROR;
     }
     drive_state_msg.temperature_phase_c = *tc_opt;
 
     auto bv_opt = dynaarm_controllers::compat::try_get_value(joint_bus_voltage_interfaces_.at(i).get());
     if (!bv_opt) {
-      RCLCPP_ERROR(get_node()->get_logger(),
-                  "Failed to read bus_voltage for joint '%s'", params_.joints[i].c_str());
+      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read bus_voltage for joint '%s'", params_.joints[i].c_str());
       return controller_interface::return_type::ERROR;
     }
     drive_state_msg.bus_voltage = *bv_opt;
 
     auto pc_opt = dynaarm_controllers::compat::try_get_value(joint_position_commanded_interfaces_.at(i).get());
     if (!pc_opt) {
-      RCLCPP_ERROR(get_node()->get_logger(),
-                  "Failed to read position_commanded for joint '%s'", params_.joints[i].c_str());
+      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read position_commanded for joint '%s'",
+                   params_.joints[i].c_str());
       return controller_interface::return_type::ERROR;
     }
     drive_state_msg.joint_position_commanded = *pc_opt;
 
     auto vc_opt = dynaarm_controllers::compat::try_get_value(joint_velocity_commanded_interfaces_.at(i).get());
     if (!vc_opt) {
-      RCLCPP_ERROR(get_node()->get_logger(),
-                  "Failed to read velocity_commanded for joint '%s'", params_.joints[i].c_str());
+      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read velocity_commanded for joint '%s'",
+                   params_.joints[i].c_str());
       return controller_interface::return_type::ERROR;
     }
     drive_state_msg.joint_velocity_commanded = *vc_opt;
 
     auto ec_opt = dynaarm_controllers::compat::try_get_value(joint_effort_commanded_interfaces_.at(i).get());
     if (!ec_opt) {
-      RCLCPP_ERROR(get_node()->get_logger(),
-                  "Failed to read effort_commanded for joint '%s'", params_.joints[i].c_str());
+      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read effort_commanded for joint '%s'",
+                   params_.joints[i].c_str());
       return controller_interface::return_type::ERROR;
     }
     drive_state_msg.joint_effort_commanded = *ec_opt;

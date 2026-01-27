@@ -174,7 +174,9 @@ GravityCompensationController::on_activate([[maybe_unused]] const rclcpp_lifecyc
   for (std::size_t i = 0; i < joint_position_state_interfaces_.size(); i++) {
     auto pos_opt = dynaarm_controllers::compat::try_get_value(joint_position_state_interfaces_.at(i).get());
 
-    if (!pos_opt) {RCLCPP_ERROR(get_node()->get_logger(), "Failed to read initial joint position for joint '%s'", params_.joints[i].c_str());
+    if (!pos_opt) {
+      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read initial joint position for joint '%s'",
+                   params_.joints[i].c_str());
       return controller_interface::CallbackReturn::ERROR;
     }
   }
@@ -226,17 +228,19 @@ controller_interface::return_type GravityCompensationController::update([[maybe_
     // Pinocchio joint index starts at 1, q/v index is idx-1
     auto pos_opt = dynaarm_controllers::compat::try_get_value(joint_position_state_interfaces_.at(i).get());
     if (!pos_opt) {
-      RCLCPP_ERROR(get_node()->get_logger(),"Failed to read position for joint '%s'", joint_name.c_str());
+      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read position for joint '%s'", joint_name.c_str());
       return controller_interface::return_type::ERROR;
     }
 
     auto vel_opt = dynaarm_controllers::compat::try_get_value(joint_velocity_state_interfaces_.at(i).get());
-    if (!vel_opt) {RCLCPP_ERROR(get_node()->get_logger(), "Failed to read velocity for joint '%s'", joint_name.c_str());
+    if (!vel_opt) {
+      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read velocity for joint '%s'", joint_name.c_str());
       return controller_interface::return_type::ERROR;
     }
 
     auto acc_opt = dynaarm_controllers::compat::try_get_value(joint_acceleration_state_interfaces_.at(i).get());
-    if (!acc_opt) {RCLCPP_ERROR(get_node()->get_logger(), "Failed to read acceleration for joint '%s'", joint_name.c_str());
+    if (!acc_opt) {
+      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read acceleration for joint '%s'", joint_name.c_str());
       return controller_interface::return_type::ERROR;
     }
 
@@ -251,13 +255,11 @@ controller_interface::return_type GravityCompensationController::update([[maybe_
   if (params_.enable_startup_check && (time - activation_time_ < rclcpp::Duration(std::chrono::milliseconds(500)))) {
     bool has_jump = false;
     for (std::size_t i = 0; i < joint_count; i++) {
-      auto pos_opt = dynaarm_controllers::compat::try_get_value(
-        joint_position_state_interfaces_.at(i).get());
+      auto pos_opt = dynaarm_controllers::compat::try_get_value(joint_position_state_interfaces_.at(i).get());
 
       if (!pos_opt) {
-        RCLCPP_ERROR(get_node()->get_logger(),
-                    "Startup check failed: no position value for joint '%s'",
-                    params_.joints[i].c_str());
+        RCLCPP_ERROR(get_node()->get_logger(), "Startup check failed: no position value for joint '%s'",
+                     params_.joints[i].c_str());
         return controller_interface::return_type::ERROR;
       }
 

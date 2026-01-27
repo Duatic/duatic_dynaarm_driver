@@ -441,7 +441,7 @@ CartesianPoseController::on_activate([[maybe_unused]] const rclcpp_lifecycle::St
     Eigen::VectorXd v = Eigen::VectorXd::Zero(pinocchio_model_.nv);
 
     for (std::size_t i = 0; i < joint_count; i++) {
-      const std::string & joint_name = params_.joints[i];
+      const std::string& joint_name = params_.joints[i];
       auto idx = pinocchio_model_.getJointId(joint_name);
       if (idx == 0) {
         RCLCPP_ERROR(get_node()->get_logger(), "Joint '%s' not found in Pinocchio model.", joint_name.c_str());
@@ -552,7 +552,7 @@ controller_interface::return_type CartesianPoseController::update([[maybe_unused
   Eigen::VectorXd a = Eigen::VectorXd::Zero(pinocchio_model_.nv);
   // Map: Pinocchio joint name -> index in q/v
   for (std::size_t i = 0; i < joint_count; i++) {
-    const std::string & joint_name = params_.joints[i];
+    const std::string& joint_name = params_.joints[i];
     auto idx = pinocchio_model_.getJointId(joint_name);
     if (idx == 0) {
       RCLCPP_ERROR(get_node()->get_logger(), "Joint '%s' not found in Pinocchio model.", joint_name.c_str());
@@ -581,7 +581,6 @@ controller_interface::return_type CartesianPoseController::update([[maybe_unused
     v[pinocchio_model_.joints[idx].idx_v()] = *vel_opt;
     a[pinocchio_model_.joints[idx].idx_v()] = *acc_opt;
   }
-
 
   // Make a snapshot of q for the IK worker
   {
@@ -664,7 +663,8 @@ controller_interface::return_type CartesianPoseController::update([[maybe_unused
       auto cmd_current_opt = dynaarm_controllers::compat::try_get_value(joint_position_command_interfaces_.at(i).get());
 
       if (!cmd_current_opt) {
-        RCLCPP_ERROR(get_node()->get_logger(), "Failed to read commanded position for joint '%s'", params_.joints[i].c_str());
+        RCLCPP_ERROR(get_node()->get_logger(), "Failed to read commanded position for joint '%s'",
+                     params_.joints[i].c_str());
         return controller_interface::return_type::ERROR;
       }
 

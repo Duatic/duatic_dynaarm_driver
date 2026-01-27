@@ -140,10 +140,13 @@ PIDTuner::on_activate([[maybe_unused]] const rclcpp_lifecycle::State& previous_s
     const std::string i_gain_param = param_name_base + "i_gain";
     const std::string d_gain_param = param_name_base + "d_gain";
 
-    auto set_param = [&node, this, &joint_name = params_.joints[i]] (const std::string & name, const CommandInterfaceReference & interface) -> bool {
+    auto set_param = [&node, this, &joint_name = params_.joints[i]](
+                         const std::string& name, const CommandInterfaceReference& interface) -> bool {
       auto current_opt = dynaarm_controllers::compat::try_get_value(interface.get());
 
-      if (!current_opt) {RCLCPP_ERROR(get_node()->get_logger(), "Failed to read command interface value for parameter '%s' (joint '%s')", name.c_str(), joint_name.c_str());
+      if (!current_opt) {
+        RCLCPP_ERROR(get_node()->get_logger(), "Failed to read command interface value for parameter '%s' (joint '%s')",
+                     name.c_str(), joint_name.c_str());
         return false;
       }
 
