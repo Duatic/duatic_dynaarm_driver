@@ -23,6 +23,7 @@
   <depend>ethercat_sdk_master</depend>
   <depend>rsl_drive_sdk</depend>
   <depend>hardware_interface</depend>
+  <depend>duatic_control</depend>
 
   <depend>dynaarm_hardware_interface_base</depend>
 
