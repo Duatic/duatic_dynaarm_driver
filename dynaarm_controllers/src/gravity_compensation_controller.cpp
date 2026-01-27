@@ -29,6 +29,7 @@
 #include <hardware_interface/types/hardware_interface_type_values.hpp>
 #include <controller_interface/helpers.hpp>
 #include <lifecycle_msgs/msg/state.hpp>
+#include <dynaarm_controllers/ros2_control_compat.hpp>
 
 namespace dynaarm_controllers
 {
@@ -171,7 +172,14 @@ GravityCompensationController::on_activate([[maybe_unused]] const rclcpp_lifecyc
 
   // Obtain the joint positions during startup which we need for the startup jump check
   for (std::size_t i = 0; i < joint_position_state_interfaces_.size(); i++) {
-    initial_joint_positions_.push_back(joint_position_state_interfaces_.at(i).get().get_value());
+    try {
+      initial_joint_positions_.push_back(
+          dynaarm_controllers::compat::require_value(joint_position_state_interfaces_.at(i).get()));
+    } catch (const dynaarm_controllers::exceptions::MissingInterfaceValue& e) {
+      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read initial joint position for joint '%s': %s",
+                   params_.joints[i].c_str(), e.what());
+      return controller_interface::CallbackReturn::ERROR;
+    }
   }
   active_ = true;
 
@@ -219,21 +227,37 @@ controller_interface::return_type GravityCompensationController::update([[maybe_
       return controller_interface::return_type::ERROR;
     }
     // Pinocchio joint index starts at 1, q/v index is idx-1
-    q[pinocchio_model_.joints[idx].idx_q()] = joint_position_state_interfaces_.at(i).get().get_value();
-    v[pinocchio_model_.joints[idx].idx_v()] = joint_velocity_state_interfaces_.at(i).get().get_value();
-    a[pinocchio_model_.joints[idx].idx_v()] = joint_acceleration_state_interfaces_.at(i).get().get_value();
-  }
+    try {
+      q[pinocchio_model_.joints[idx].idx_q()] =
+          dynaarm_controllers::compat::require_value(joint_position_state_interfaces_.at(i).get());
 
+      v[pinocchio_model_.joints[idx].idx_v()] =
+          dynaarm_controllers::compat::require_value(joint_velocity_state_interfaces_.at(i).get());
+
+      a[pinocchio_model_.joints[idx].idx_v()] =
+          dynaarm_controllers::compat::require_value(joint_acceleration_state_interfaces_.at(i).get());
+
+    } catch (const dynaarm_controllers::exceptions::MissingInterfaceValue& e) {
+      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read state for joint '%s': %s", joint_name.c_str(), e.what());
+      return controller_interface::return_type::ERROR;
+    }
+  }
   // Perform startup jump check if enabled
   // A jump might happen if the configured urdf does not match the hardware
   // So for the first 0.5s after activation we check if there was a jump of more than (default 0.5) x rad
   if (params_.enable_startup_check && (time - activation_time_ < rclcpp::Duration(std::chrono::milliseconds(500)))) {
     bool has_jump = false;
-    for (std::size_t i = 0; i < joint_count; i++) {
-      if (std::abs(joint_position_state_interfaces_.at(i).get().get_value() - initial_joint_positions_.at(i)) >
-          params_.max_jump_startup) {
-        has_jump = true;
+    try {
+      for (std::size_t i = 0; i < joint_count; i++) {
+        const double pos_now = dynaarm_controllers::compat::require_value(joint_position_state_interfaces_.at(i).get());
+
+        if (std::abs(pos_now - initial_joint_positions_.at(i)) > params_.max_jump_startup) {
+          has_jump = true;
+        }
       }
+    } catch (const dynaarm_controllers::exceptions::MissingInterfaceValue& e) {
+      RCLCPP_ERROR(get_node()->get_logger(), "Startup check failed: no position value available: %s", e.what());
+      return controller_interface::return_type::ERROR;
     }
 
     if (has_jump) {
@@ -264,9 +288,8 @@ controller_interface::return_type GravityCompensationController::update([[maybe_
   }
   // and we try to have our realtime publisher publish the message
   // if this doesn't succeed - well it will probably next time
-  if (params_.enable_state_topic && status_pub_rt_->trylock()) {
-    status_pub_rt_->msg_ = state_msg;
-    status_pub_rt_->unlockAndPublish();
+  if (params_.enable_state_topic) {
+    dynaarm_controllers::compat::publish_rt(status_pub_rt_, state_msg);
   }
 
   return controller_interface::return_type::OK;

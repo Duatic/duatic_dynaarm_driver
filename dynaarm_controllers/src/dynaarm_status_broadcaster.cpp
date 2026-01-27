@@ -27,6 +27,7 @@
 #include <hardware_interface/types/hardware_interface_type_values.hpp>
 #include <controller_interface/helpers.hpp>
 #include <lifecycle_msgs/msg/state.hpp>
+#include <dynaarm_controllers/ros2_control_compat.hpp>
 
 namespace dynaarm_controllers
 {
@@ -205,29 +206,42 @@ controller_interface::return_type StatusBroadcaster::update(const rclcpp::Time& 
   for (std::size_t i = 0; i < params_.joints.size(); i++) {
     DriveState drive_state_msg;
 
-    drive_state_msg.name = params_.joints.at(i);
-    drive_state_msg.joint_position = joint_position_interfaces_.at(i).get().get_value();
-    drive_state_msg.joint_velocity = joint_velocity_interfaces_.at(i).get().get_value();
-    drive_state_msg.joint_effort = joint_effort_interfaces_.at(i).get().get_value();
-    drive_state_msg.temperature_system = joint_temperature_system_interfaces_.at(i).get().get_value();
-    drive_state_msg.temperature_phase_a = joint_temperature_phase_a_interfaces_.at(i).get().get_value();
-    drive_state_msg.temperature_phase_b = joint_temperature_phase_b_interfaces_.at(i).get().get_value();
-    drive_state_msg.temperature_phase_c = joint_temperature_phase_c_interfaces_.at(i).get().get_value();
-    drive_state_msg.bus_voltage = joint_bus_voltage_interfaces_.at(i).get().get_value();
+    try {
+      drive_state_msg.joint_position =
+          dynaarm_controllers::compat::require_value(joint_position_interfaces_.at(i).get());
+      drive_state_msg.joint_velocity =
+          dynaarm_controllers::compat::require_value(joint_velocity_interfaces_.at(i).get());
+      drive_state_msg.joint_effort = dynaarm_controllers::compat::require_value(joint_effort_interfaces_.at(i).get());
 
-    drive_state_msg.joint_position_commanded = joint_position_commanded_interfaces_.at(i).get().get_value();
-    drive_state_msg.joint_velocity_commanded = joint_velocity_commanded_interfaces_.at(i).get().get_value();
-    drive_state_msg.joint_effort_commanded = joint_effort_commanded_interfaces_.at(i).get().get_value();
+      drive_state_msg.temperature_system =
+          dynaarm_controllers::compat::require_value(joint_temperature_system_interfaces_.at(i).get());
+      drive_state_msg.temperature_phase_a =
+          dynaarm_controllers::compat::require_value(joint_temperature_phase_a_interfaces_.at(i).get());
+      drive_state_msg.temperature_phase_b =
+          dynaarm_controllers::compat::require_value(joint_temperature_phase_b_interfaces_.at(i).get());
+      drive_state_msg.temperature_phase_c =
+          dynaarm_controllers::compat::require_value(joint_temperature_phase_c_interfaces_.at(i).get());
+      drive_state_msg.bus_voltage =
+          dynaarm_controllers::compat::require_value(joint_bus_voltage_interfaces_.at(i).get());
+
+      drive_state_msg.joint_position_commanded =
+          dynaarm_controllers::compat::require_value(joint_position_commanded_interfaces_.at(i).get());
+      drive_state_msg.joint_velocity_commanded =
+          dynaarm_controllers::compat::require_value(joint_velocity_commanded_interfaces_.at(i).get());
+      drive_state_msg.joint_effort_commanded =
+          dynaarm_controllers::compat::require_value(joint_effort_commanded_interfaces_.at(i).get());
+    } catch (const dynaarm_controllers::exceptions::MissingInterfaceValue& e) {
+      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read state interface values for joint '%s': %s",
+                   params_.joints[i].c_str(), e.what());
+      return controller_interface::return_type::ERROR;
+    }
 
     state_msg.states.emplace_back(drive_state_msg);
   }
 
   // and we try to have our realtime publisher publish the message
   // if this doesn't succeed - well it will probably next time
-  if (arm_state_pub_rt_->trylock()) {
-    arm_state_pub_rt_->msg_ = state_msg;
-    arm_state_pub_rt_->unlockAndPublish();
-  }
+  dynaarm_controllers::compat::publish_rt(arm_state_pub_rt_, state_msg);
   return controller_interface::return_type::OK;
 }
 }  // namespace dynaarm_controllers

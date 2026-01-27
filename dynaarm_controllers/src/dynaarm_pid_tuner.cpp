@@ -23,6 +23,7 @@
  */
 
 #include <dynaarm_controllers/dynaarm_pid_tuner.hpp>
+#include <dynaarm_controllers/ros2_control_compat.hpp>
 
 #include <hardware_interface/types/hardware_interface_type_values.hpp>
 #include <controller_interface/helpers.hpp>
@@ -134,23 +135,34 @@ PIDTuner::on_activate([[maybe_unused]] const rclcpp_lifecycle::State& previous_s
   const auto joint_size = params_.joints.size();
   auto&& node = get_node();
   for (std::size_t i = 0; i < joint_size; i++) {
-    const std::string param_name_base = params_.joints[i] + "/";
+    const std::string joint_name = params_.joints[i];
+
+    const std::string param_name_base = joint_name + "/";
     const std::string p_gain_param = param_name_base + "p_gain";
     const std::string i_gain_param = param_name_base + "i_gain";
     const std::string d_gain_param = param_name_base + "d_gain";
 
     auto set_param = [&node](const std::string& name, const CommandInterfaceReference& interface) {
-      // Either declare or update the parameter
+      const double current = dynaarm_controllers::compat::require_value(interface.get());
+
       if (!node->has_parameter(name)) {
-        node->declare_parameter(name, interface.get().get_value());
+        node->declare_parameter(name, current);
       } else {
-        node->set_parameter(rclcpp::Parameter(name, interface.get().get_value()));
+        node->set_parameter(rclcpp::Parameter(name, current));
       }
+      return true;
     };
 
-    set_param(p_gain_param, joint_p_gain_command_interfaces_[i]);
-    set_param(i_gain_param, joint_i_gain_command_interfaces_[i]);
-    set_param(d_gain_param, joint_d_gain_command_interfaces_[i]);
+    try {
+      set_param(p_gain_param, joint_p_gain_command_interfaces_[i]);
+      set_param(i_gain_param, joint_i_gain_command_interfaces_[i]);
+      set_param(d_gain_param, joint_d_gain_command_interfaces_[i]);
+    } catch (const dynaarm_controllers::exceptions::MissingInterfaceValue& e) {
+      RCLCPP_ERROR(get_node()->get_logger(),
+                   "Failed to read command interface value while initializing PID params for joint '%s': %s",
+                   joint_name.c_str(), e.what());
+      return controller_interface::CallbackReturn::ERROR;
+    }
   }
 
   return controller_interface::CallbackReturn::SUCCESS;

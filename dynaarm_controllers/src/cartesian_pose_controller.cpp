@@ -43,6 +43,7 @@
 
 #include <controller_interface/helpers.hpp>
 #include <lifecycle_msgs/msg/state.hpp>
+#include <dynaarm_controllers/ros2_control_compat.hpp>
 
 #include <pluginlib/class_list_macros.hpp>
 
@@ -441,13 +442,23 @@ CartesianPoseController::on_activate([[maybe_unused]] const rclcpp_lifecycle::St
 
     for (std::size_t i = 0; i < joint_count; i++) {
       const std::string& joint_name = params_.joints[i];
-      auto idx = pinocchio_model_.getJointId(joint_name);
+      const auto idx = pinocchio_model_.getJointId(joint_name);
       if (idx == 0) {
         RCLCPP_ERROR(get_node()->get_logger(), "Joint '%s' not found in Pinocchio model.", joint_name.c_str());
         return controller_interface::CallbackReturn::FAILURE;
       }
-      q[pinocchio_model_.joints[idx].idx_q()] = joint_position_state_interfaces_.at(i).get().get_value();
-      v[pinocchio_model_.joints[idx].idx_v()] = joint_velocity_state_interfaces_.at(i).get().get_value();
+
+      try {
+        q[pinocchio_model_.joints[idx].idx_q()] =
+            dynaarm_controllers::compat::require_value(joint_position_state_interfaces_.at(i).get());
+
+        v[pinocchio_model_.joints[idx].idx_v()] =
+            dynaarm_controllers::compat::require_value(joint_velocity_state_interfaces_.at(i).get());
+
+      } catch (const dynaarm_controllers::exceptions::MissingInterfaceValue& e) {
+        RCLCPP_ERROR(get_node()->get_logger(), "Failed to read state for joint '%s': %s", joint_name.c_str(), e.what());
+        return controller_interface::CallbackReturn::ERROR;
+      }
     }
 
     // Update snapshot for worker
@@ -544,12 +555,22 @@ controller_interface::return_type CartesianPoseController::update([[maybe_unused
       RCLCPP_ERROR(get_node()->get_logger(), "Joint '%s' not found in Pinocchio model.", joint_name.c_str());
       return controller_interface::return_type::ERROR;
     }
-    // Pinocchio joint index starts at 1, q/v index is idx-1
-    q[pinocchio_model_.joints[idx].idx_q()] = joint_position_state_interfaces_.at(i).get().get_value();
-    v[pinocchio_model_.joints[idx].idx_v()] = joint_velocity_state_interfaces_.at(i).get().get_value();
-    a[pinocchio_model_.joints[idx].idx_v()] = joint_acceleration_state_interfaces_.at(i).get().get_value();
-  }
 
+    try {
+      q[pinocchio_model_.joints[idx].idx_q()] =
+          dynaarm_controllers::compat::require_value(joint_position_state_interfaces_.at(i).get());
+
+      v[pinocchio_model_.joints[idx].idx_v()] =
+          dynaarm_controllers::compat::require_value(joint_velocity_state_interfaces_.at(i).get());
+
+      a[pinocchio_model_.joints[idx].idx_v()] =
+          dynaarm_controllers::compat::require_value(joint_acceleration_state_interfaces_.at(i).get());
+
+    } catch (const dynaarm_controllers::exceptions::MissingInterfaceValue& e) {
+      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read state for joint '%s': %s", joint_name.c_str(), e.what());
+      return controller_interface::return_type::ERROR;
+    }
+  }
   // Make a snapshot of q for the IK worker
   {
     std::lock_guard<std::mutex> lock(ik_mutex_);
@@ -627,9 +648,15 @@ controller_interface::return_type CartesianPoseController::update([[maybe_unused
       const double delta = q_target_joint - q_current_joint;
       max_delta_norm = std::max(max_delta_norm, std::abs(delta));
 
-      // Read currently commanded position (may be last commanded value)
-      double cmd_current = joint_position_command_interfaces_.at(i).get().get_value();
-
+      double cmd_current;
+      try {
+        // Read currently commanded position (may be last commanded value)
+        cmd_current = dynaarm_controllers::compat::require_value(joint_position_command_interfaces_.at(i).get());
+      } catch (const dynaarm_controllers::exceptions::MissingInterfaceValue& e) {
+        RCLCPP_ERROR(get_node()->get_logger(), "Failed to read commanded position for joint '%s': %s",
+                     joint_name.c_str(), e.what());
+        return controller_interface::return_type::ERROR;
+      }
       // Clamp change per update to MAX_JOINT_STEP to avoid instantaneous jumps
       double applied = q_target_joint;
       if (std::abs(q_target_joint - cmd_current) > MAX_JOINT_STEP) {

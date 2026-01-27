@@ -23,6 +23,7 @@
  */
 
 #include <dynaarm_controllers/freedrive_controller.hpp>
+#include <dynaarm_controllers/ros2_control_compat.hpp>
 
 #include <hardware_interface/types/hardware_interface_type_values.hpp>
 #include <controller_interface/helpers.hpp>
@@ -143,9 +144,15 @@ FreeDriveController::on_activate([[maybe_unused]] const rclcpp_lifecycle::State&
   const std::size_t joint_count = joint_position_state_interfaces_.size();
   for (std::size_t i = 0; i < joint_count; i++) {
     Gains g;
-    g.p = joint_p_gain_command_interfaces_[i].get().get_value();
-    g.i = joint_i_gain_command_interfaces_[i].get().get_value();
-    g.d = joint_d_gain_command_interfaces_[i].get().get_value();
+    try {
+      g.p = dynaarm_controllers::compat::require_value(joint_p_gain_command_interfaces_[i].get());
+      g.i = dynaarm_controllers::compat::require_value(joint_i_gain_command_interfaces_[i].get());
+      g.d = dynaarm_controllers::compat::require_value(joint_d_gain_command_interfaces_[i].get());
+    } catch (const dynaarm_controllers::exceptions::MissingInterfaceValue& e) {
+      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read previous PID gains for joint '%s': %s",
+                   params_.joints[i].c_str(), e.what());
+      return controller_interface::CallbackReturn::ERROR;
+    }
     previous_gains_.emplace_back(g);
 
     RCLCPP_DEBUG_STREAM(get_node()->get_logger(),
@@ -201,8 +208,17 @@ controller_interface::return_type FreeDriveController::update([[maybe_unused]] c
   // Never the less we command the current joint position. This is only important when switching from this controller to
   // another one
   for (std::size_t i = 0; i < joint_count; i++) {
-    const double current_joint_position = joint_position_state_interfaces_.at(i).get().get_value();
-    bool success = joint_position_command_interfaces_.at(i).get().set_value(current_joint_position);
+    double current_joint_position;
+
+    try {
+      current_joint_position = dynaarm_controllers::compat::require_value(joint_position_state_interfaces_.at(i).get());
+    } catch (const dynaarm_controllers::exceptions::MissingInterfaceValue& e) {
+      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read joint position for '%s': %s", params_.joints[i].c_str(),
+                   e.what());
+      return controller_interface::return_type::ERROR;
+    }
+
+    const bool success = joint_position_command_interfaces_.at(i).get().set_value(current_joint_position);
 
     if (!success) {
       RCLCPP_ERROR_STREAM(get_node()->get_logger(), "Error wring value to command interface: "
