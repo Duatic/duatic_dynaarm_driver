@@ -77,8 +77,7 @@ inline double require_value(const LoanedInterfaceT& iface)
 {
   auto opt = try_get_value(iface);
   if (!opt) {
-    throw dynaarm_controllers::exceptions::MissingInterfaceValue(
-      "State interface value not available");
+    throw dynaarm_controllers::exceptions::MissingInterfaceValue("State interface value not available");
   }
   return *opt;
 }

@@ -76,8 +76,7 @@ controller_interface::CallbackReturn GravityCompensationController::on_init()
     param_listener_->refresh_dynamic_parameters();
     params_ = param_listener_->get_params();
   } catch (const std::exception& e) {
-    RCLCPP_ERROR_STREAM(get_node()->get_logger(), 
-      "Exception during controller init: " << e.what());
+    RCLCPP_ERROR_STREAM(get_node()->get_logger(), "Exception during controller init: " << e.what());
     return controller_interface::CallbackReturn::ERROR;
   }
 
@@ -174,8 +173,11 @@ GravityCompensationController::on_activate([[maybe_unused]] const rclcpp_lifecyc
   // Obtain the joint positions during startup which we need for the startup jump check
   for (std::size_t i = 0; i < joint_position_state_interfaces_.size(); i++) {
     try {
-      initial_joint_positions_.push_back(dynaarm_controllers::compat::require_value(joint_position_state_interfaces_.at(i).get()));
-    } catch (const dynaarm_controllers::exceptions::MissingInterfaceValue& e) {RCLCPP_ERROR(get_node()->get_logger(), "Failed to read initial joint position for joint '%s': %s", params_.joints[i].c_str(), e.what());
+      initial_joint_positions_.push_back(
+          dynaarm_controllers::compat::require_value(joint_position_state_interfaces_.at(i).get()));
+    } catch (const dynaarm_controllers::exceptions::MissingInterfaceValue& e) {
+      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read initial joint position for joint '%s': %s",
+                   params_.joints[i].c_str(), e.what());
       return controller_interface::CallbackReturn::ERROR;
     }
   }
@@ -226,16 +228,19 @@ controller_interface::return_type GravityCompensationController::update([[maybe_
     }
     // Pinocchio joint index starts at 1, q/v index is idx-1
     try {
-      q[pinocchio_model_.joints[idx].idx_q()] = dynaarm_controllers::compat::require_value(joint_position_state_interfaces_.at(i).get());
+      q[pinocchio_model_.joints[idx].idx_q()] =
+          dynaarm_controllers::compat::require_value(joint_position_state_interfaces_.at(i).get());
 
-      v[pinocchio_model_.joints[idx].idx_v()] = dynaarm_controllers::compat::require_value(joint_velocity_state_interfaces_.at(i).get());
+      v[pinocchio_model_.joints[idx].idx_v()] =
+          dynaarm_controllers::compat::require_value(joint_velocity_state_interfaces_.at(i).get());
 
-      a[pinocchio_model_.joints[idx].idx_v()] = dynaarm_controllers::compat::require_value(joint_acceleration_state_interfaces_.at(i).get());
+      a[pinocchio_model_.joints[idx].idx_v()] =
+          dynaarm_controllers::compat::require_value(joint_acceleration_state_interfaces_.at(i).get());
 
-    } catch (const dynaarm_controllers::exceptions::MissingInterfaceValue& e) {RCLCPP_ERROR(get_node()->get_logger(), "Failed to read state for joint '%s': %s", joint_name.c_str(), e.what());
+    } catch (const dynaarm_controllers::exceptions::MissingInterfaceValue& e) {
+      RCLCPP_ERROR(get_node()->get_logger(), "Failed to read state for joint '%s': %s", joint_name.c_str(), e.what());
       return controller_interface::return_type::ERROR;
     }
-
   }
   // Perform startup jump check if enabled
   // A jump might happen if the configured urdf does not match the hardware
@@ -250,7 +255,8 @@ controller_interface::return_type GravityCompensationController::update([[maybe_
           has_jump = true;
         }
       }
-    } catch (const dynaarm_controllers::exceptions::MissingInterfaceValue& e) {RCLCPP_ERROR(get_node()->get_logger(), "Startup check failed: no position value available: %s", e.what());
+    } catch (const dynaarm_controllers::exceptions::MissingInterfaceValue& e) {
+      RCLCPP_ERROR(get_node()->get_logger(), "Startup check failed: no position value available: %s", e.what());
       return controller_interface::return_type::ERROR;
     }
 

@@ -12,8 +12,9 @@ namespace dynaarm_controllers::exceptions
  */
 struct MissingInterfaceValue : public std::runtime_error
 {
-  explicit MissingInterfaceValue(const std::string& msg)
-  : std::runtime_error(msg) {}
+  explicit MissingInterfaceValue(const std::string& msg) : std::runtime_error(msg)
+  {
+  }
 };
 
 }  // namespace dynaarm_controllers::exceptions
