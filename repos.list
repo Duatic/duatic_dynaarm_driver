@@ -1,5 +1,5 @@
 repositories:
-  dynaarm_description:
+  duatic_dynaarm_description:
     type: git
     url: https://github.com/Duatic/duatic_dynaarm_description.git
     version: rename
