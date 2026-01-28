@@ -211,7 +211,8 @@ controller_interface::return_type FreeDriveController::update([[maybe_unused]] c
     double current_joint_position;
 
     try {
-      current_joint_position = duatic_dynaarm_controllers::compat::require_value(joint_position_state_interfaces_.at(i).get());
+      current_joint_position =
+          duatic_dynaarm_controllers::compat::require_value(joint_position_state_interfaces_.at(i).get());
     } catch (const duatic_dynaarm_controllers::exceptions::MissingInterfaceValue& e) {
       RCLCPP_ERROR(get_node()->get_logger(), "Failed to read joint position for '%s': %s", params_.joints[i].c_str(),
                    e.what());

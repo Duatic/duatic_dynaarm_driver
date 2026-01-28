@@ -211,7 +211,8 @@ controller_interface::return_type StatusBroadcaster::update(const rclcpp::Time& 
           duatic_dynaarm_controllers::compat::require_value(joint_position_interfaces_.at(i).get());
       drive_state_msg.joint_velocity =
           duatic_dynaarm_controllers::compat::require_value(joint_velocity_interfaces_.at(i).get());
-      drive_state_msg.joint_effort = duatic_dynaarm_controllers::compat::require_value(joint_effort_interfaces_.at(i).get());
+      drive_state_msg.joint_effort =
+          duatic_dynaarm_controllers::compat::require_value(joint_effort_interfaces_.at(i).get());
 
       drive_state_msg.temperature_system =
           duatic_dynaarm_controllers::compat::require_value(joint_temperature_system_interfaces_.at(i).get());

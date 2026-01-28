@@ -248,7 +248,8 @@ controller_interface::return_type GravityCompensationController::update([[maybe_
     bool has_jump = false;
     try {
       for (std::size_t i = 0; i < joint_count; i++) {
-        const double pos_now = duatic_dynaarm_controllers::compat::require_value(joint_position_state_interfaces_.at(i).get());
+        const double pos_now =
+            duatic_dynaarm_controllers::compat::require_value(joint_position_state_interfaces_.at(i).get());
 
         if (std::abs(pos_now - initial_joint_positions_.at(i)) > params_.max_jump_startup) {
           has_jump = true;
