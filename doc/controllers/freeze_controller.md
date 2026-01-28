@@ -6,7 +6,7 @@ The freeze mode is enabled upon activation of the controller and disabled upon d
 ## Parameters
 
 ### Definition:
-```{literalinclude} ../../dynaarm_controllers/src/freeze_controller_parameters.yaml
+```{literalinclude} ../../duatic_dynaarm_controllers/src/freeze_controller_parameters.yaml
 ```
 
 __arm_name__ | [Required]:\
@@ -35,4 +35,4 @@ The freeze mode is implemented on hardware level by running the actuators in vel
 
 ## References
 
-* [Source](https://github.com/Duatic/dynaarm_driver/blob/main/dynaarm_controllers/include/dynaarm_controllers/freeze_controller.hpp)
+* [Source](https://github.com/Duatic/duatic_dynaarm_driver/blob/main/duatic_dynaarm_controllers/include/duatic_dynaarm_controllers/freeze_controller.hpp)

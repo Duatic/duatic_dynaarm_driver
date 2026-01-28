@@ -6,7 +6,7 @@ It is recommended to always run this controller as it vastly improves the contro
 ## Parameters
 
 ### Definition:
-```{literalinclude} ../../dynaarm_controllers/src/gravity_compensation_controller_parameters.yaml
+```{literalinclude} ../../duatic_dynaarm_controllers/src/gravity_compensation_controller_parameters.yaml
 ```
 
 __joints__ | [Required]:\
@@ -44,4 +44,4 @@ As written above it is recommend to always run this controller. The only reason 
 
 ## References
 
-* [Source](https://github.com/Duatic/dynaarm_driver/blob/main/dynaarm_controllers/include/dynaarm_controllers/gravity_compensation_controller.hpp)
+* [Source](https://github.com/Duatic/duatic_dynaarm_driver/blob/main/duatic_dynaarm_controllers/include/duatic_dynaarm_controllers/gravity_compensation_controller.hpp)

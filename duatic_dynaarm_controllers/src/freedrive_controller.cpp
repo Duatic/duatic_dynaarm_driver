@@ -145,10 +145,10 @@ FreeDriveController::on_activate([[maybe_unused]] const rclcpp_lifecycle::State&
   for (std::size_t i = 0; i < joint_count; i++) {
     Gains g;
     try {
-      g.p = dynaarm_controllers::compat::require_value(joint_p_gain_command_interfaces_[i].get());
-      g.i = dynaarm_controllers::compat::require_value(joint_i_gain_command_interfaces_[i].get());
-      g.d = dynaarm_controllers::compat::require_value(joint_d_gain_command_interfaces_[i].get());
-    } catch (const dynaarm_controllers::exceptions::MissingInterfaceValue& e) {
+      g.p = duatic_dynaarm_controllers::compat::require_value(joint_p_gain_command_interfaces_[i].get());
+      g.i = duatic_dynaarm_controllers::compat::require_value(joint_i_gain_command_interfaces_[i].get());
+      g.d = duatic_dynaarm_controllers::compat::require_value(joint_d_gain_command_interfaces_[i].get());
+    } catch (const duatic_dynaarm_controllers::exceptions::MissingInterfaceValue& e) {
       RCLCPP_ERROR(get_node()->get_logger(), "Failed to read previous PID gains for joint '%s': %s",
                    params_.joints[i].c_str(), e.what());
       return controller_interface::CallbackReturn::ERROR;
@@ -211,8 +211,8 @@ controller_interface::return_type FreeDriveController::update([[maybe_unused]] c
     double current_joint_position;
 
     try {
-      current_joint_position = dynaarm_controllers::compat::require_value(joint_position_state_interfaces_.at(i).get());
-    } catch (const dynaarm_controllers::exceptions::MissingInterfaceValue& e) {
+      current_joint_position = duatic_dynaarm_controllers::compat::require_value(joint_position_state_interfaces_.at(i).get());
+    } catch (const duatic_dynaarm_controllers::exceptions::MissingInterfaceValue& e) {
       RCLCPP_ERROR(get_node()->get_logger(), "Failed to read joint position for '%s': %s", params_.joints[i].c_str(),
                    e.what());
       return controller_interface::return_type::ERROR;

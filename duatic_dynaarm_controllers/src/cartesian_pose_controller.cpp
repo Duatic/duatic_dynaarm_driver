@@ -450,11 +450,11 @@ CartesianPoseController::on_activate([[maybe_unused]] const rclcpp_lifecycle::St
 
       try {
         q[pinocchio_model_.joints[idx].idx_q()] =
-            dynaarm_controllers::compat::require_value(joint_position_state_interfaces_.at(i).get());
+            duatic_dynaarm_controllers::compat::require_value(joint_position_state_interfaces_.at(i).get());
 
         v[pinocchio_model_.joints[idx].idx_v()] =
-            dynaarm_controllers::compat::require_value(joint_velocity_state_interfaces_.at(i).get());
-      } catch (const dynaarm_controllers::exceptions::MissingInterfaceValue& e) {
+            duatic_dynaarm_controllers::compat::require_value(joint_velocity_state_interfaces_.at(i).get());
+      } catch (const duatic_dynaarm_controllers::exceptions::MissingInterfaceValue& e) {
         RCLCPP_ERROR(get_node()->get_logger(), "Failed to read state for joint '%s': %s", joint_name.c_str(), e.what());
         return controller_interface::CallbackReturn::ERROR;
       }
@@ -557,14 +557,14 @@ controller_interface::return_type CartesianPoseController::update([[maybe_unused
 
     try {
       q[pinocchio_model_.joints[idx].idx_q()] =
-          dynaarm_controllers::compat::require_value(joint_position_state_interfaces_.at(i).get());
+          duatic_dynaarm_controllers::compat::require_value(joint_position_state_interfaces_.at(i).get());
 
       v[pinocchio_model_.joints[idx].idx_v()] =
-          dynaarm_controllers::compat::require_value(joint_velocity_state_interfaces_.at(i).get());
+          duatic_dynaarm_controllers::compat::require_value(joint_velocity_state_interfaces_.at(i).get());
 
       a[pinocchio_model_.joints[idx].idx_v()] =
-          dynaarm_controllers::compat::require_value(joint_acceleration_state_interfaces_.at(i).get());
-    } catch (const dynaarm_controllers::exceptions::MissingInterfaceValue& e) {
+          duatic_dynaarm_controllers::compat::require_value(joint_acceleration_state_interfaces_.at(i).get());
+    } catch (const duatic_dynaarm_controllers::exceptions::MissingInterfaceValue& e) {
       RCLCPP_ERROR(get_node()->get_logger(), "Failed to read state for joint '%s': %s", joint_name.c_str(), e.what());
       return controller_interface::return_type::ERROR;
     }
@@ -649,8 +649,8 @@ controller_interface::return_type CartesianPoseController::update([[maybe_unused
       double cmd_current;
       try {
         // Read currently commanded position (may be last commanded value)
-        cmd_current = dynaarm_controllers::compat::require_value(joint_position_command_interfaces_.at(i).get());
-      } catch (const dynaarm_controllers::exceptions::MissingInterfaceValue& e) {
+        cmd_current = duatic_dynaarm_controllers::compat::require_value(joint_position_command_interfaces_.at(i).get());
+      } catch (const duatic_dynaarm_controllers::exceptions::MissingInterfaceValue& e) {
         RCLCPP_ERROR(get_node()->get_logger(), "Failed to read commanded position for joint '%s': %s",
                      joint_name.c_str(), e.what());
         return controller_interface::return_type::ERROR;

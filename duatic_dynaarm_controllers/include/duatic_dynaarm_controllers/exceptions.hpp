@@ -27,7 +27,7 @@
 #include <stdexcept>
 #include <string>
 
-namespace dynaarm_controllers::exceptions
+namespace duatic_dynaarm_controllers::exceptions
 {
 
 /**
@@ -43,4 +43,4 @@ struct MissingInterfaceValue : public std::runtime_error
   }
 };
 
-}  // namespace dynaarm_controllers::exceptions
+}  // namespace duatic_dynaarm_controllers::exceptions

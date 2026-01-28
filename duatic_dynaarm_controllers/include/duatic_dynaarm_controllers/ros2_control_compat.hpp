@@ -30,7 +30,7 @@
 
 #include <duatic_dynaarm_controllers/exceptions.hpp>
 
-namespace dynaarm_controllers::compat
+namespace duatic_dynaarm_controllers::compat
 {
 
 /**
@@ -101,7 +101,7 @@ inline double require_value(const LoanedInterfaceT& iface)
 {
   auto opt = try_get_value(iface);
   if (!opt) {
-    throw dynaarm_controllers::exceptions::MissingInterfaceValue("State interface value not available");
+    throw duatic_dynaarm_controllers::exceptions::MissingInterfaceValue("State interface value not available");
   }
   return *opt;
 }
@@ -159,4 +159,4 @@ inline void publish_rt(PubT& pub, const MsgT& msg)
   }
 }
 
-}  // namespace dynaarm_controllers::compat
+}  // namespace duatic_dynaarm_controllers::compat
