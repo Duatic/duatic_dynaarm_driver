@@ -1,12 +1,12 @@
 # DynaArm Status Controller
 
 Controller that provides additional status information about the configured DynaArm.
-The published [ArmState](https://github.com/Duatic/dynaarm_driver/blob/main/dynaarm_msgs/msg/ArmState.msg) consists of an array of information about each configured [actuator](https://github.com/Duatic/dynaarm_driver/blob/main/dynaarm_msgs/msg/DriveState.msg)
+The published [ArmState](https://github.com/Duatic/duatic_dynaarm_driver/blob/main/dynaarm_msgs/msg/ArmState.msg) consists of an array of information about each configured [actuator](https://github.com/Duatic/duatic_dynaarm_driver/blob/main/dynaarm_msgs/msg/DriveState.msg)
 
 ## Parameters
 
 ### Definition:
-```{literalinclude} ../../dynaarm_controllers/src/dynaarm_status_broadcaster_parameters.yaml
+```{literalinclude} ../../duatic_dynaarm_controllers/src/dynaarm_status_broadcaster_parameters.yaml
 ```
 
 __joints__ | [Required]:\
@@ -38,7 +38,7 @@ dynaarm_status_broadcaster:
 ### Topics:
 
 __~/state__ | [Publisher]:\
-type: [<dynaarm_msgs/msg/ArmState>](https://github.com/Duatic/dynaarm_driver/blob/main/dynaarm_msgs/msg/ArmState.msg)
+type: [<dynaarm_msgs/msg/ArmState>](https://github.com/Duatic/duatic_dynaarm_driver/blob/main/dynaarm_msgs/msg/ArmState.msg)
 Publishes the ArmState message with the configured controller update rate.
 
 ## Additional Information
@@ -47,4 +47,4 @@ The `DriveState` message contains not only the currently read position/velocity/
 
 ## References
 
-* [Source](https://github.com/Duatic/dynaarm_driver/blob/main/dynaarm_controllers/include/dynaarm_controllers/dynaarm_status_broadcaster.hpp)
+* [Source](https://github.com/Duatic/duatic_dynaarm_driver/blob/main/duatic_dynaarm_controllers/include/duatic_dynaarm_controllers/dynaarm_status_broadcaster.hpp)

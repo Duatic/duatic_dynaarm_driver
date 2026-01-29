@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Duatic AG
+ * Copyright 2026 Duatic AG
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the
  * following conditions are met:
@@ -174,8 +174,8 @@ GravityCompensationController::on_activate([[maybe_unused]] const rclcpp_lifecyc
   for (std::size_t i = 0; i < joint_position_state_interfaces_.size(); i++) {
     try {
       initial_joint_positions_.push_back(
-          dynaarm_controllers::compat::require_value(joint_position_state_interfaces_.at(i).get()));
-    } catch (const dynaarm_controllers::exceptions::MissingInterfaceValue& e) {
+          duatic_dynaarm_controllers::compat::require_value(joint_position_state_interfaces_.at(i).get()));
+    } catch (const duatic_dynaarm_controllers::exceptions::MissingInterfaceValue& e) {
       RCLCPP_ERROR(get_node()->get_logger(), "Failed to read initial joint position for joint '%s': %s",
                    params_.joints[i].c_str(), e.what());
       return controller_interface::CallbackReturn::ERROR;
@@ -229,14 +229,14 @@ controller_interface::return_type GravityCompensationController::update([[maybe_
     // Pinocchio joint index starts at 1, q/v index is idx-1
     try {
       q[pinocchio_model_.joints[idx].idx_q()] =
-          dynaarm_controllers::compat::require_value(joint_position_state_interfaces_.at(i).get());
+          duatic_dynaarm_controllers::compat::require_value(joint_position_state_interfaces_.at(i).get());
 
       v[pinocchio_model_.joints[idx].idx_v()] =
-          dynaarm_controllers::compat::require_value(joint_velocity_state_interfaces_.at(i).get());
+          duatic_dynaarm_controllers::compat::require_value(joint_velocity_state_interfaces_.at(i).get());
 
       a[pinocchio_model_.joints[idx].idx_v()] =
-          dynaarm_controllers::compat::require_value(joint_acceleration_state_interfaces_.at(i).get());
-    } catch (const dynaarm_controllers::exceptions::MissingInterfaceValue& e) {
+          duatic_dynaarm_controllers::compat::require_value(joint_acceleration_state_interfaces_.at(i).get());
+    } catch (const duatic_dynaarm_controllers::exceptions::MissingInterfaceValue& e) {
       RCLCPP_ERROR(get_node()->get_logger(), "Failed to read state for joint '%s': %s", joint_name.c_str(), e.what());
       return controller_interface::return_type::ERROR;
     }
@@ -248,13 +248,14 @@ controller_interface::return_type GravityCompensationController::update([[maybe_
     bool has_jump = false;
     try {
       for (std::size_t i = 0; i < joint_count; i++) {
-        const double pos_now = dynaarm_controllers::compat::require_value(joint_position_state_interfaces_.at(i).get());
+        const double pos_now =
+            duatic_dynaarm_controllers::compat::require_value(joint_position_state_interfaces_.at(i).get());
 
         if (std::abs(pos_now - initial_joint_positions_.at(i)) > params_.max_jump_startup) {
           has_jump = true;
         }
       }
-    } catch (const dynaarm_controllers::exceptions::MissingInterfaceValue& e) {
+    } catch (const duatic_dynaarm_controllers::exceptions::MissingInterfaceValue& e) {
       RCLCPP_ERROR(get_node()->get_logger(), "Startup check failed: no position value available: %s", e.what());
       return controller_interface::return_type::ERROR;
     }
@@ -288,7 +289,7 @@ controller_interface::return_type GravityCompensationController::update([[maybe_
   // and we try to have our realtime publisher publish the message
   // if this doesn't succeed - well it will probably next time
   if (params_.enable_state_topic) {
-    dynaarm_controllers::compat::publish_rt(status_pub_rt_, state_msg);
+    duatic_dynaarm_controllers::compat::publish_rt(status_pub_rt_, state_msg);
   }
 
   return controller_interface::return_type::OK;

@@ -21,12 +21,13 @@
  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 #pragma once
 
 #include <stdexcept>
 #include <string>
 
-namespace dynaarm_controllers::exceptions
+namespace duatic_dynaarm_controllers::exceptions
 {
 
 /**
@@ -42,4 +43,4 @@ struct MissingInterfaceValue : public std::runtime_error
   }
 };
 
-}  // namespace dynaarm_controllers::exceptions
+}  // namespace duatic_dynaarm_controllers::exceptions

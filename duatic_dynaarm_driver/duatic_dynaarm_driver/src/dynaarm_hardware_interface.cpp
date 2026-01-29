@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Duatic AG
+ * Copyright 2026 Duatic AG
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the
  * following conditions are met:
@@ -26,6 +26,7 @@
 #include "duatic_dynaarm_driver/dynaarm_hardware_interface.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "ethercat_sdk_master/EthercatMasterSingleton.hpp"
+
 namespace duatic_dynaarm_driver
 {
 

@@ -10,7 +10,7 @@ Please use with care. By selecting bad parameters it is possible to damage the h
 ## Parameters
 
 ### Definition:
-```{literalinclude} ../../dynaarm_controllers/src/dynaarm_pid_tuner_parameters.yaml
+```{literalinclude} ../../duatic_dynaarm_controllers/src/dynaarm_pid_tuner_parameters.yaml
 ```
 
 __joints__ | [Required]:\
@@ -36,7 +36,7 @@ pid_tuner:
 ## ROS Interface
 
 __~/<joint name>/pid_gains/set__ | [Subscription]:\
-type: [<dynaarm_msgs/msg/PIDGains](https://github.com/Duatic/dynaarm_driver/blob/main/dynaarm_msgs/msg/PIDGains.msg).\
+type: [<dynaarm_msgs/msg/PIDGains](https://github.com/Duatic/duatic_dynaarm_driver/blob/main/dynaarm_msgs/msg/PIDGains.msg).\
 For each configured joint a new topic is created that awaits new PID-gains. \
 The received gains are then configured as a parameters of the controller node and set to the drive during the next update cycle.
 
@@ -48,4 +48,4 @@ They can be access via `ros2 param get <controller node name> <joint name>/<gain
 
 ## References
 
-* [Source](https://github.com/Duatic/dynaarm_driver/blob/main/dynaarm_controllers/include/dynaarm_controllers/dynaarm_pid_tuner.hpp)
+* [Source](https://github.com/Duatic/duatic_dynaarm_driver/blob/main/duatic_dynaarm_controllers/include/duatic_dynaarm_controllers/dynaarm_pid_tuner.hpp)

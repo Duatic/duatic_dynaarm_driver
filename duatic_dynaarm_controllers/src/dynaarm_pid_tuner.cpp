@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Duatic AG
+ * Copyright 2026 Duatic AG
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the
  * following conditions are met:
@@ -143,7 +143,7 @@ PIDTuner::on_activate([[maybe_unused]] const rclcpp_lifecycle::State& previous_s
     const std::string d_gain_param = param_name_base + "d_gain";
 
     auto set_param = [&node](const std::string& name, const CommandInterfaceReference& interface) {
-      const double current = dynaarm_controllers::compat::require_value(interface.get());
+      const double current = duatic_dynaarm_controllers::compat::require_value(interface.get());
 
       if (!node->has_parameter(name)) {
         node->declare_parameter(name, current);
@@ -157,7 +157,7 @@ PIDTuner::on_activate([[maybe_unused]] const rclcpp_lifecycle::State& previous_s
       set_param(p_gain_param, joint_p_gain_command_interfaces_[i]);
       set_param(i_gain_param, joint_i_gain_command_interfaces_[i]);
       set_param(d_gain_param, joint_d_gain_command_interfaces_[i]);
-    } catch (const dynaarm_controllers::exceptions::MissingInterfaceValue& e) {
+    } catch (const duatic_dynaarm_controllers::exceptions::MissingInterfaceValue& e) {
       RCLCPP_ERROR(get_node()->get_logger(),
                    "Failed to read command interface value while initializing PID params for joint '%s': %s",
                    joint_name.c_str(), e.what());

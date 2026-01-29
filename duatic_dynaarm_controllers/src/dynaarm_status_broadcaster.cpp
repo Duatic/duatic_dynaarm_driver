@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Duatic AG
+ * Copyright 2026 Duatic AG
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the
  * following conditions are met:
@@ -208,29 +208,30 @@ controller_interface::return_type StatusBroadcaster::update(const rclcpp::Time& 
 
     try {
       drive_state_msg.joint_position =
-          dynaarm_controllers::compat::require_value(joint_position_interfaces_.at(i).get());
+          duatic_dynaarm_controllers::compat::require_value(joint_position_interfaces_.at(i).get());
       drive_state_msg.joint_velocity =
-          dynaarm_controllers::compat::require_value(joint_velocity_interfaces_.at(i).get());
-      drive_state_msg.joint_effort = dynaarm_controllers::compat::require_value(joint_effort_interfaces_.at(i).get());
+          duatic_dynaarm_controllers::compat::require_value(joint_velocity_interfaces_.at(i).get());
+      drive_state_msg.joint_effort =
+          duatic_dynaarm_controllers::compat::require_value(joint_effort_interfaces_.at(i).get());
 
       drive_state_msg.temperature_system =
-          dynaarm_controllers::compat::require_value(joint_temperature_system_interfaces_.at(i).get());
+          duatic_dynaarm_controllers::compat::require_value(joint_temperature_system_interfaces_.at(i).get());
       drive_state_msg.temperature_phase_a =
-          dynaarm_controllers::compat::require_value(joint_temperature_phase_a_interfaces_.at(i).get());
+          duatic_dynaarm_controllers::compat::require_value(joint_temperature_phase_a_interfaces_.at(i).get());
       drive_state_msg.temperature_phase_b =
-          dynaarm_controllers::compat::require_value(joint_temperature_phase_b_interfaces_.at(i).get());
+          duatic_dynaarm_controllers::compat::require_value(joint_temperature_phase_b_interfaces_.at(i).get());
       drive_state_msg.temperature_phase_c =
-          dynaarm_controllers::compat::require_value(joint_temperature_phase_c_interfaces_.at(i).get());
+          duatic_dynaarm_controllers::compat::require_value(joint_temperature_phase_c_interfaces_.at(i).get());
       drive_state_msg.bus_voltage =
-          dynaarm_controllers::compat::require_value(joint_bus_voltage_interfaces_.at(i).get());
+          duatic_dynaarm_controllers::compat::require_value(joint_bus_voltage_interfaces_.at(i).get());
 
       drive_state_msg.joint_position_commanded =
-          dynaarm_controllers::compat::require_value(joint_position_commanded_interfaces_.at(i).get());
+          duatic_dynaarm_controllers::compat::require_value(joint_position_commanded_interfaces_.at(i).get());
       drive_state_msg.joint_velocity_commanded =
-          dynaarm_controllers::compat::require_value(joint_velocity_commanded_interfaces_.at(i).get());
+          duatic_dynaarm_controllers::compat::require_value(joint_velocity_commanded_interfaces_.at(i).get());
       drive_state_msg.joint_effort_commanded =
-          dynaarm_controllers::compat::require_value(joint_effort_commanded_interfaces_.at(i).get());
-    } catch (const dynaarm_controllers::exceptions::MissingInterfaceValue& e) {
+          duatic_dynaarm_controllers::compat::require_value(joint_effort_commanded_interfaces_.at(i).get());
+    } catch (const duatic_dynaarm_controllers::exceptions::MissingInterfaceValue& e) {
       RCLCPP_ERROR(get_node()->get_logger(), "Failed to read state interface values for joint '%s': %s",
                    params_.joints[i].c_str(), e.what());
       return controller_interface::return_type::ERROR;
@@ -241,7 +242,7 @@ controller_interface::return_type StatusBroadcaster::update(const rclcpp::Time& 
 
   // and we try to have our realtime publisher publish the message
   // if this doesn't succeed - well it will probably next time
-  dynaarm_controllers::compat::publish_rt(arm_state_pub_rt_, state_msg);
+  duatic_dynaarm_controllers::compat::publish_rt(arm_state_pub_rt_, state_msg);
   return controller_interface::return_type::OK;
 }
 }  // namespace duatic_dynaarm_controllers

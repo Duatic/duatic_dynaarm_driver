@@ -4,7 +4,7 @@ The DynaArm Driver provides a rather lowlevel access to the actuators of the arm
 This allows the operator to fine tune the arm to the desired usecase.
 
 The default configuration files for each actuator are located within the driver package:
-[dynaarm_driver/dynaarm_driver/config](https://github.com/Duatic/dynaarm_driver/tree/main/dynaarm_driver/dynaarm_driver/config). They are separated for each version of the arm.
+[duatic_dynaarm_driver/duatic_dynaarm_driver/config](https://github.com/Duatic/duatic_dynaarm_driver/tree/main/duatic_dynaarm_driver/duatic_dynaarm_driver/config). They are separated for each version of the arm.
 
 
 ## Providing custom configuration for an actuator
