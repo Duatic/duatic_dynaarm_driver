@@ -26,11 +26,12 @@ OF
 THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -->
 
+<!-- This macro combines the actual description together with the ros2control plugin description-->
 <robot name="dynaarm" xmlns:xacro="http://www.ros.org/wiki/xacro">
-    <xacro:macro name="dynaarm"
+    <xacro:macro name="dynaarm_control"
     params="tf_prefix parent_link collision:='simple' dof mode ethercat_bus drive_order:='' start_in_freeze_mode:=false drive_parameter_folder:='' covers version *origin">
-        <xacro:include file_name="$(find duatic_dynaarm_description)/urdf/dynaarm.urdf.xacro" />
-        <xacro:include filename="$(find duatic_dynaarm_driver)/urdf/common/dynaarm.ros2control.xacro" />
+        <xacro:include filename="$(find duatic_dynaarm_description)/urdf/dynaarm.urdf.xacro" />
+        <xacro:include filename="$(find duatic_dynaarm_driver)/urdf/dynaarm.ros2control.xacro" />
 
          <!-- Allow the user to pass the drive order file -->
         <xacro:property name="default_drive_order_file" value="$(find duatic_dynaarm_description)/urdf/common/${version}/drive_order.yaml" />
@@ -38,28 +39,23 @@ THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <!-- Obtain the EtherCAT drive order (address order list) -->
         <xacro:property name="ethercat_addresses" value="${xacro.load_yaml(drive_order_file)}"/>
 
+        <!-- Create the instance of the actual description (what you see in rviz)-->
         <xacro:dynaarm
-            parent_link_collision:="${parent_link_collision}"
-            dof:="${dof}"
-            covers:="${covers}"
-            version:="${version}">
+                tf_prefix="${tf_prefix}"
+                parent_link="${parent_link}"
+                collision="${collision}"
+                dof="${dof}"
+                covers="${covers}"
+                version="${version}">
             <xacro:insert_block name="origin" />
         </xacro:dynaarm>
+        <!-- Creatte the ros2control part-->
         <xacro:dynaarm_ros2_control tf_prefix="${tf_prefix}"
                                     ethercat_bus="${ethercat_bus}"
                                     start_in_freeze_mode="${start_in_freeze_mode}"
                                     drive_parameter_folder="${drive_parameter_folder}"
                                     ethercat_addresses="${ethercat_addresses}"
                                     mode="${mode}"/>
-
-
-    <!-- Gazebo Ros2 Control -->
-    <xacro:if value="${mode == 'sim'}">
-      <xacro:include filename="$(find duatic_control)/urdf/plugins.urdf.xacro" />
-      <xacro:control namespace="$(arg namespace)">
-        <remapping>cmd_vel:=cmd_vel</remapping> <!-- TODO: This line only exists, because otherwise the xacro doesn't compile -->
-      </xacro:control>
-    </xacro:if>
 
     </xacro:macro>
 </robot>
