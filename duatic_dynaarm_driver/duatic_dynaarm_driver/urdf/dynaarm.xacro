@@ -38,12 +38,12 @@ THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <!-- Obtain the EtherCAT drive order (address order list) -->
         <xacro:property name="ethercat_addresses" value="${xacro.load_yaml(drive_order_file)}"/>
 
-        <xacro:dynaarm 
+        <xacro:dynaarm
             parent_link_collision:="${parent_link_collision}"
             dof:="${dof}"
             covers:="${covers}"
             version:="${version}">
-            <xacro:insert_block name="origin" /> 
+            <xacro:insert_block name="origin" />
         </xacro:dynaarm>
         <xacro:dynaarm_ros2_control tf_prefix="${tf_prefix}"
                                     ethercat_bus="${ethercat_bus}"
@@ -51,6 +51,15 @@ THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                                     drive_parameter_folder="${drive_parameter_folder}"
                                     ethercat_addresses="${ethercat_addresses}"
                                     mode="${mode}"/>
+
+
+    <!-- Gazebo Ros2 Control -->
+    <xacro:if value="${mode == 'sim'}">
+      <xacro:include filename="$(find duatic_control)/urdf/plugins.urdf.xacro" />
+      <xacro:control namespace="$(arg namespace)">
+        <remapping>cmd_vel:=cmd_vel</remapping> <!-- TODO: This line only exists, because otherwise the xacro doesn't compile -->
+      </xacro:control>
+    </xacro:if>
 
     </xacro:macro>
 </robot>

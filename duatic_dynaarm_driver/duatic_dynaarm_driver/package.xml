@@ -26,6 +26,9 @@
 
   <depend>duatic_dynaarm_hardware_interface_base</depend>
 
+  <exec_depend>duatic_control</exec_depend>
+  <exec_depend>duatic_dynaarm_description</exec_depend>
+
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
 
