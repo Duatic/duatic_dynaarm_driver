@@ -29,7 +29,18 @@ THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <!-- This macro combines the actual description together with the ros2control plugin description-->
 <robot name="dynaarm" xmlns:xacro="http://www.ros.org/wiki/xacro">
     <xacro:macro name="dynaarm"
-    params="tf_prefix parent_link collision:='simple' dof mode ethercat_bus drive_order:='' start_in_freeze_mode:=false drive_parameter_folder:='' covers version *origin">
+                 params="tf_prefix
+                         parent_link
+                         collision:='simple'
+                         dof
+                         mode
+                         ethercat_bus
+                         drive_order:=''
+                         start_in_freeze_mode:=false
+                         drive_parameter_folder:=''
+                         covers
+                         version
+                         *origin">
         <xacro:include filename="$(find duatic_dynaarm_description)/urdf/dynaarm.urdf.xacro" />
         <xacro:include filename="$(find duatic_dynaarm_driver)/urdf/dynaarm.ros2control.xacro" />
 
@@ -49,12 +60,14 @@ THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 version="${version}">
             <xacro:insert_block name="origin" />
         </xacro:dynaarm_description>
-        <!-- Creatte the ros2control part-->
+
+        <!-- Create the ros2control part-->
         <xacro:dynaarm_ros2_control tf_prefix="${tf_prefix}"
                                     ethercat_bus="${ethercat_bus}"
                                     start_in_freeze_mode="${start_in_freeze_mode}"
                                     drive_parameter_folder="${drive_parameter_folder}"
                                     ethercat_addresses="${ethercat_addresses}"
+                                    version="${version}"
                                     mode="${mode}"/>
 
     </xacro:macro>
