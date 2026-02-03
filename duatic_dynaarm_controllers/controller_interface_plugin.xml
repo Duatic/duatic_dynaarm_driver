@@ -47,5 +47,13 @@
       Freeze the DynaArm in its current configuration.
     </description>
   </class>
+  <class name="duatic_dynaarm_controllers/ForceTorqueBroadcaster"
+         type="duatic_dynaarm_controllers::ForceTorqueBroadcaster"
+         base_class_type="controller_interface::ControllerInterface">
+    <description>
+      Calculate the estimated endeffector wrench from the measured torques of the drives
+    </description>
+  </class>
+
 
 </library>
