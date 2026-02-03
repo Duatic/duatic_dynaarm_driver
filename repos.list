@@ -3,10 +3,6 @@ repositories:
     type: git
     url: https://github.com/Duatic/duatic_control.git
     version: main
-  duatic_dynaarm_driver:
-    type: git
-    url: https://github.com/Duatic/duatic_dynaarm_driver.git
-    version: main
   duatic_dynaarm_description:
     type: git
     url: https://github.com/Duatic/duatic_dynaarm_description.git

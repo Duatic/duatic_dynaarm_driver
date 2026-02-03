@@ -60,7 +60,7 @@ install(
 )
 
 install(DIRECTORY
-  config
+  config urdf
   DESTINATION share/${PROJECT_NAME}/
 )
 

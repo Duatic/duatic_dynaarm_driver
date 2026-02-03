@@ -1,0 +1,61 @@
+<?xml version="1.0"?>
+<!--
+Copyright 2026 Duatic AG
+
+Redistribution and use in source and binary forms, with or without modification, are permitted
+provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this list of conditions
+and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice, this list of
+conditions and the following disclaimer in the documentation and/or other materials provided with
+the distribution.
+
+3. Neither the name of the copyright holder nor the names of its contributors may be used to
+endorse or promote products derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR
+IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
+IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+OF
+THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+
+<!-- This macro combines the actual description together with the ros2control plugin description-->
+<robot name="dynaarm" xmlns:xacro="http://www.ros.org/wiki/xacro">
+    <xacro:macro name="dynaarm"
+    params="tf_prefix parent_link collision:='simple' dof mode ethercat_bus drive_order:='' start_in_freeze_mode:=false drive_parameter_folder:='' covers version *origin">
+        <xacro:include filename="$(find duatic_dynaarm_description)/urdf/dynaarm.urdf.xacro" />
+        <xacro:include filename="$(find duatic_dynaarm_driver)/urdf/dynaarm.ros2control.xacro" />
+
+         <!-- Allow the user to pass the drive order file -->
+        <xacro:property name="default_drive_order_file" value="$(find duatic_dynaarm_description)/urdf/common/${version}/drive_order.yaml" />
+        <xacro:property name="drive_order_file" value="${default_drive_order_file if drive_order == '' else drive_order}" />
+        <!-- Obtain the EtherCAT drive order (address order list) -->
+        <xacro:property name="ethercat_addresses" value="${xacro.load_yaml(drive_order_file)}"/>
+
+        <!-- Create the instance of the actual description (what you see in rviz)-->
+        <xacro:dynaarm_description
+                tf_prefix="${tf_prefix}"
+                parent_link="${parent_link}"
+                collision="${collision}"
+                dof="${dof}"
+                covers="${covers}"
+                version="${version}">
+            <xacro:insert_block name="origin" />
+        </xacro:dynaarm_description>
+        <!-- Creatte the ros2control part-->
+        <xacro:dynaarm_ros2_control tf_prefix="${tf_prefix}"
+                                    ethercat_bus="${ethercat_bus}"
+                                    start_in_freeze_mode="${start_in_freeze_mode}"
+                                    drive_parameter_folder="${drive_parameter_folder}"
+                                    ethercat_addresses="${ethercat_addresses}"
+                                    mode="${mode}"/>
+
+    </xacro:macro>
+</robot>

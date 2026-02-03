@@ -1,0 +1,146 @@
+<?xml version="1.0"?>
+<!--
+Copyright 2026 Duatic AG
+
+Redistribution and use in source and binary forms, with or without modification, are permitted
+provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this list of conditions
+and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice, this list of
+conditions and the following disclaimer in the documentation and/or other materials provided with
+the distribution.
+
+3. Neither the name of the copyright holder nor the names of its contributors may be used to
+endorse or promote products derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR
+IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
+IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+OF
+THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:macro name="dynaarm_joint_ros2control_joint_interfaces">
+    <state_interface name="position">
+        <!-- Slightly offset the initial position for the gazebo sim-->
+        <param name="initial_value">0.05</param>
+    </state_interface>
+    <state_interface name="velocity" />
+    <state_interface name="effort" />
+    <state_interface name="motor_position" />
+    <state_interface name="motor_velocity" />
+    <state_interface name="motor_effort" />
+    <state_interface name="motor_temperature_system" />
+    <state_interface name="motor_temperature_coil_A" />
+    <state_interface name="motor_temperature_coil_B" />
+    <state_interface name="motor_temperature_coil_C" />
+    <state_interface name="motor_bus_voltage" />
+    <command_interface name="position" />
+    <command_interface name="velocity" />
+    <command_interface name="effort" />
+    <command_interface name="p_gain" />
+    <command_interface name="i_gain" />
+    <command_interface name="d_gain" />
+  </xacro:macro>
+
+  <xacro:macro name="dynaarm_ros2control_joint" params="name address mode">
+    <joint name="${name}">
+      <xacro:if value="${mode != 'isaac'}">
+        <param name="address">${address}</param>
+        <xacro:dynaarm_joint_ros2control_joint_interfaces />
+      </xacro:if>
+      <xacro:if value="${mode == 'isaac'}">
+        <command_interface name="position" />
+        <command_interface name="velocity" />
+        <command_interface name="effort" />
+        <state_interface name="position">
+          <param name="initial_value">0.0</param>
+        </state_interface>
+        <state_interface name="velocity" />
+        <state_interface name="effort" />
+      </xacro:if>
+    </joint>
+  </xacro:macro>
+
+  <xacro:macro name="dynaarm_ros2_control" params="tf_prefix namespace:='' ethercat_bus start_in_freeze_mode drive_parameter_folder:='' ethercat_addresses mode">
+    <!--Allow the user to pass a custom folder for drive parameters-->
+    <xacro:property name="default_drive_parameter_folder" value="$(find duatic_dynaarm_driver)/config/${version}" />
+    <xacro:if value="${drive_parameter_folder == ''}">
+      <xacro:property name="drive_parameter_folder_internal" value="${default_drive_parameter_folder}" />
+    </xacro:if>
+    <xacro:unless value="${drive_parameter_folder == ''}">
+      <xacro:property name="drive_parameter_folder_internal" value="${drive_parameter_folder}" />
+    </xacro:unless>
+
+    <ros2_control name="${tf_prefix}DynaarmSystem" type="system">
+      <hardware>
+        <xacro:if value="${mode == 'isaac'}">
+          <plugin>joint_state_topic_hardware_interface/JointStateTopicSystem</plugin>
+          <param name="joint_states_topic">isaac_joint_states</param>
+          <param name="joint_commands_topic">${tf_prefix}isaac_joint_command</param>
+          <!-- Isaac wraps joint angles, this helps un-wrap them -->
+          <param name="sum_wrapped_joint_states">true</param>
+        </xacro:if>
+        <xacro:if value="${mode == 'sim'}">
+          <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+        </xacro:if>
+        <xacro:if value="${mode == 'mock'}">
+          <plugin>duatic_dynaarm_driver/DynaarmMockHardwareInterface</plugin>
+          <param name="tf_prefix">${tf_prefix}</param>
+          <param name="start_in_freeze_mode">${start_in_freeze_mode}</param>
+          <param name="drive_parameter_folder">${drive_parameter_folder_internal}</param>
+          <param name="drive_parameter_folder_default">${default_drive_parameter_folder}</param>
+          <param name="initial_positions">[0.05, 0.05, 0.10, 0.05, 0.05, 0.05]</param>
+        </xacro:if>
+        <xacro:if value="${mode == 'real'}">
+          <plugin>duatic_dynaarm_driver/DynaArmHardwareInterface</plugin>
+          <param name="ethercat_bus">${ethercat_bus}</param>
+          <param name="tf_prefix">${tf_prefix}</param>
+          <param name="start_in_freeze_mode">${start_in_freeze_mode}</param>
+          <param name="drive_parameter_folder">${drive_parameter_folder_internal}</param>
+          <param name="drive_parameter_folder_default">${default_drive_parameter_folder}</param>
+        </xacro:if>
+      </hardware>
+
+      <xacro:if value="${dof >= 1}">
+        <xacro:dynaarm_ros2control_joint name="${tf_prefix}shoulder_rotation" address="${ethercat_addresses['shoulder_rotation']}" mode="${mode}" />
+      </xacro:if>
+
+      <xacro:if value="${dof >= 2}">
+        <xacro:dynaarm_ros2control_joint name="${tf_prefix}shoulder_flexion" address="${ethercat_addresses['shoulder_flexion']}" mode="${mode}" />
+      </xacro:if>
+
+      <xacro:if value="${dof >= 3}">
+        <xacro:dynaarm_ros2control_joint name="${tf_prefix}elbow_flexion" address="${ethercat_addresses['elbow_flexion']}" mode="${mode}" />
+      </xacro:if>
+
+      <xacro:if value="${dof >= 4}">
+        <xacro:dynaarm_ros2control_joint name="${tf_prefix}forearm_rotation" address="${ethercat_addresses['forearm_rotation']}" mode="${mode}" />
+      </xacro:if>
+
+      <xacro:if value="${dof >= 5}">
+        <xacro:dynaarm_ros2control_joint name="${tf_prefix}wrist_flexion" address="${ethercat_addresses['wrist_flexion']}" mode="${mode}" />
+      </xacro:if>
+
+      <xacro:if value="${dof >= 6}">
+        <xacro:dynaarm_ros2control_joint name="${tf_prefix}wrist_rotation" address="${ethercat_addresses['wrist_rotation']}" mode="${mode}" />
+      </xacro:if>
+
+      <xacro:if value="${mode != 'isaac'}">
+        <gpio name="${tf_prefix}DynaarmSystem">
+          <command_interface name="freeze_mode" />
+        </gpio>
+      </xacro:if>
+
+    </ros2_control>
+  </xacro:macro>
+
+</robot>
