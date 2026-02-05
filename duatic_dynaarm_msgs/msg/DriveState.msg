@@ -35,4 +35,13 @@ float32 temperature_phase_c
 # Current bus voltage [V]
 float32 bus_voltage
 
+# Motor currents [A]
+# In d-q coordinates
+float64 current_q
+float64 current_d
+# Phase currents
+float64 current_phase_a
+float64 current_phase_b
+float64 current_phase_c
+
 #TODO add drive state, warnings

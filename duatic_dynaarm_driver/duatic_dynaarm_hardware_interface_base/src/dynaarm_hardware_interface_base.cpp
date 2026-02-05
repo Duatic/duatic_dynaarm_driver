@@ -120,6 +120,17 @@ std::vector<hardware_interface::StateInterface> DynaArmHardwareInterfaceBase::ex
                                                                      &motor_state.temperature_coil_C));
     state_interfaces.emplace_back(
         hardware_interface::StateInterface(motor_state.name, "motor_bus_voltage", &motor_state.bus_voltage));
+
+    state_interfaces.emplace_back(
+        hardware_interface::StateInterface(motor_state.name, "motor_current_d", &motor_state.current_d));
+    state_interfaces.emplace_back(
+        hardware_interface::StateInterface(motor_state.name, "motor_current_q", &motor_state.current_q));
+    state_interfaces.emplace_back(
+        hardware_interface::StateInterface(motor_state.name, "motor_current_coil_A", &motor_state.current_coil_A));
+    state_interfaces.emplace_back(
+        hardware_interface::StateInterface(motor_state.name, "motor_current_coil_B", &motor_state.current_coil_B));
+    state_interfaces.emplace_back(
+        hardware_interface::StateInterface(motor_state.name, "motor_current_coil_C", &motor_state.current_coil_C));
   }
 
   for (auto& motor_command : motor_command_vector_) {
