@@ -94,5 +94,11 @@ private:
   StateInterfaceReferences joint_temperature_phase_b_interfaces_;
   StateInterfaceReferences joint_temperature_phase_c_interfaces_;
   StateInterfaceReferences joint_bus_voltage_interfaces_;
+
+  StateInterfaceReferences joint_current_d_interfaces_;
+  StateInterfaceReferences joint_current_q_interfaces_;
+  StateInterfaceReferences joint_current_phase_a_interfaces_;
+  StateInterfaceReferences joint_current_phase_b_interfaces_;
+  StateInterfaceReferences joint_current_phase_c_interfaces_;
 };
 }  // namespace duatic_dynaarm_controllers

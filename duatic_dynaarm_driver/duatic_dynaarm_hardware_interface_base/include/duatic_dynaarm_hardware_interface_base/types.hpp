@@ -77,6 +77,12 @@ struct MotorState
   double position_commanded = 0.0;
   double velocity_commanded = 0.0;
   double effort_commanded = 0.0;
+
+  double current_q = 0.0;
+  double current_d = 0.0;
+  double current_coil_A = 0.0;
+  double current_coil_B = 0.0;
+  double current_coil_C = 0.0;
 };
 
 struct MotorCommand
