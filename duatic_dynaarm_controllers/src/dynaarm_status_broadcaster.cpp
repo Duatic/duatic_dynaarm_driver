@@ -217,7 +217,7 @@ StatusBroadcaster::on_activate([[maybe_unused]] const rclcpp_lifecycle::State& p
     return controller_interface::CallbackReturn::FAILURE;
   }
   if (!controller_interface::get_ordered_interfaces(state_interfaces_, params_.joints, "motor_current_coil_C",
-                                                    joint_temperature_phase_c_interfaces_)) {
+                                                    joint_current_phase_c_interfaces_)) {
     RCLCPP_WARN(get_node()->get_logger(), "Could not get ordered interfaces - motor_current_coil_C");
     return controller_interface::CallbackReturn::FAILURE;
   }
