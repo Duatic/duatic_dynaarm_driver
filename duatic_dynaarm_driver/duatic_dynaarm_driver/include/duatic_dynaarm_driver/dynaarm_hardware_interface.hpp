@@ -46,7 +46,7 @@
 #include <ament_index_cpp/get_package_share_directory.hpp>
 
 // hardware interface
-#include <duatic_dynaarm_hardware_interface_base/dynaarm_hardware_interface_base.hpp>
+#include <duatic_dynaarm_driver/dynaarm_hardware_interface_base.hpp>
 
 // sdk
 // As ros2control does not support sharing resources between hardware interfaces we need to resort to using a singleton
@@ -56,7 +56,7 @@
 
 namespace duatic_dynaarm_driver
 {
-class DynaArmHardwareInterface : public duatic_dynaarm_hardware_interface_base::DynaArmHardwareInterfaceBase
+class DynaArmHardwareInterface : public DynaArmHardwareInterfaceBase
 {
 public:
   RCLCPP_SHARED_PTR_DEFINITIONS(DynaArmHardwareInterface)
