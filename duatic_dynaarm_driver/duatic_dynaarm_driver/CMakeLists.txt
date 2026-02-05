@@ -18,7 +18,6 @@ set(PACKAGE_DEPENDENCIES
   pluginlib
   hardware_interface
   urdf
-  duatic_dynaarm_hardware_interface_base
   ethercat_sdk_master
   rsl_drive_sdk
 )
