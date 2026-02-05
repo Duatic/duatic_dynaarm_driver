@@ -362,4 +362,4 @@ hardware_interface::return_type DynaArmHardwareInterfaceBase::perform_command_mo
   return hardware_interface::return_type::OK;
 }
 
-}  // namespace duatic_dynaarm_hardware_interface_base
+}  // namespace duatic_dynaarm_driver

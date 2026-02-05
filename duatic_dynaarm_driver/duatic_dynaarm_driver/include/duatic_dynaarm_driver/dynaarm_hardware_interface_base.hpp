@@ -106,4 +106,4 @@ protected:
   std::atomic<bool> active_{ false };
 };
 
-}  // namespace duatic_dynaarm_hardware_interface_base
+}  // namespace duatic_dynaarm_driver
