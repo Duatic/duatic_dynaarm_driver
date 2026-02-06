@@ -42,16 +42,17 @@ target_link_libraries(${PROJECT_NAME} ${YAML_CPP_LIBRARIES})
 
 
 ament_export_dependencies(${PACKAGE_DEPENDENCIES} yaml-cpp)
-ament_export_libraries(
-  ${PROJECT_NAME}
-)
+ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 
 pluginlib_export_plugin_description_file(hardware_interface hardware_interface_plugin.xml)
 
 
 install(
   TARGETS ${PROJECT_NAME}
-  DESTINATION lib/${PROJECT_NAME}
+  EXPORT export_${PROJECT_NAME}
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
 )
 
 install(
