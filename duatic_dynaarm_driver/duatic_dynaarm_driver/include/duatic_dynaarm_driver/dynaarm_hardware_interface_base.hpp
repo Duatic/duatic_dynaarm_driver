@@ -45,10 +45,10 @@
 #include <rclcpp_lifecycle/state.hpp>
 
 // Urdf
-#include "duatic_dynaarm_hardware_interface_base/types.hpp"
-#include "duatic_dynaarm_hardware_interface_base/command_translator.hpp"
+#include "duatic_dynaarm_driver/types.hpp"
+#include "duatic_dynaarm_driver/command_translator.hpp"
 
-namespace duatic_dynaarm_hardware_interface_base
+namespace duatic_dynaarm_driver
 {
 class DynaArmHardwareInterfaceBase : public hardware_interface::SystemInterface
 {
@@ -106,4 +106,4 @@ protected:
   std::atomic<bool> active_{ false };
 };
 
-}  // namespace duatic_dynaarm_hardware_interface_base
+}  // namespace duatic_dynaarm_driver

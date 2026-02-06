@@ -23,10 +23,10 @@
  */
 
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
-#include "duatic_dynaarm_hardware_interface_base/dynaarm_hardware_interface_base.hpp"
-#include "duatic_dynaarm_hardware_interface_base/string_utils.hpp"
+#include "duatic_dynaarm_driver/dynaarm_hardware_interface_base.hpp"
+#include "duatic_dynaarm_driver/string_utils.hpp"
 
-namespace duatic_dynaarm_hardware_interface_base
+namespace duatic_dynaarm_driver
 {
 DynaArmHardwareInterfaceBase::~DynaArmHardwareInterfaceBase()
 {
@@ -362,4 +362,4 @@ hardware_interface::return_type DynaArmHardwareInterfaceBase::perform_command_mo
   return hardware_interface::return_type::OK;
 }
 
-}  // namespace duatic_dynaarm_hardware_interface_base
+}  // namespace duatic_dynaarm_driver
