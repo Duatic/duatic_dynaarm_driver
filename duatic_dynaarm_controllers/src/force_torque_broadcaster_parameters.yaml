@@ -11,5 +11,9 @@ force_torque_broadcaster:
     description: "name of the arm hardware interface"
   endeffector_frame:
     type: string
-    default_value: "/tool0"
+    default_value: "/flange"
     description: "Name of the virtual endeffector frame"
+  lambda_regularization:
+    type: double
+    default_value:  0.0001
+    description: "Regularization parameter for solving for the wrench"
