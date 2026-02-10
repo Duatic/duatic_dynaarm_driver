@@ -23,10 +23,10 @@
  */
 
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
-#include "duatic_dynaarm_hardware_interface_base/dynaarm_hardware_interface_base.hpp"
-#include "duatic_dynaarm_hardware_interface_base/string_utils.hpp"
+#include "duatic_dynaarm_driver/dynaarm_hardware_interface_base.hpp"
+#include "duatic_dynaarm_driver/string_utils.hpp"
 
-namespace duatic_dynaarm_hardware_interface_base
+namespace duatic_dynaarm_driver
 {
 DynaArmHardwareInterfaceBase::~DynaArmHardwareInterfaceBase()
 {
@@ -120,6 +120,17 @@ std::vector<hardware_interface::StateInterface> DynaArmHardwareInterfaceBase::ex
                                                                      &motor_state.temperature_coil_C));
     state_interfaces.emplace_back(
         hardware_interface::StateInterface(motor_state.name, "motor_bus_voltage", &motor_state.bus_voltage));
+
+    state_interfaces.emplace_back(
+        hardware_interface::StateInterface(motor_state.name, "motor_current_d", &motor_state.current_d));
+    state_interfaces.emplace_back(
+        hardware_interface::StateInterface(motor_state.name, "motor_current_q", &motor_state.current_q));
+    state_interfaces.emplace_back(
+        hardware_interface::StateInterface(motor_state.name, "motor_current_coil_A", &motor_state.current_coil_A));
+    state_interfaces.emplace_back(
+        hardware_interface::StateInterface(motor_state.name, "motor_current_coil_B", &motor_state.current_coil_B));
+    state_interfaces.emplace_back(
+        hardware_interface::StateInterface(motor_state.name, "motor_current_coil_C", &motor_state.current_coil_C));
   }
 
   for (auto& motor_command : motor_command_vector_) {
@@ -351,4 +362,4 @@ hardware_interface::return_type DynaArmHardwareInterfaceBase::perform_command_mo
   return hardware_interface::return_type::OK;
 }
 
-}  // namespace duatic_dynaarm_hardware_interface_base
+}  // namespace duatic_dynaarm_driver

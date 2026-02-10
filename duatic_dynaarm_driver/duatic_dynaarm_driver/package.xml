@@ -24,7 +24,6 @@
   <depend>rsl_drive_sdk</depend>
   <depend>hardware_interface</depend>
 
-  <depend>duatic_dynaarm_hardware_interface_base</depend>
 
   <exec_depend>duatic_control</exec_depend>
   <exec_depend>duatic_dynaarm_description</exec_depend>

@@ -236,6 +236,13 @@ void DynaArmHardwareInterface::read_motor_states()
     motor_state_vector_[i].temperature_coil_B = state.getCoilTemp2();
     motor_state_vector_[i].temperature_coil_C = state.getCoilTemp3();
     motor_state_vector_[i].bus_voltage = state.getVoltage();
+
+    motor_state_vector_[i].current_d = state.getMeasuredCurrentD();
+    motor_state_vector_[i].current_q = state.getMeasuredCurrentQ();
+
+    motor_state_vector_[i].current_coil_A = state.getMeasuredCurrentPhaseU();
+    motor_state_vector_[i].current_coil_B = state.getMeasuredCurrentPhaseV();
+    motor_state_vector_[i].current_coil_C = state.getMeasuredCurrentPhaseW();
   }
 }
 
