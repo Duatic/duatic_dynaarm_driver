@@ -251,9 +251,17 @@ controller_interface::return_type ForceTorqueBroadcaster::update([[maybe_unused]
                               J);  // LOCAL or LOCAL_WORLD_ALIGNED
 
   // Solve for wrench: F = (J^T)^+ * tau_ext
-  const double lambda = params_.lambda_regularization;  // Regularization parameter (tune this)
-  Eigen::Matrix<double, 6, 6> A = J * J.transpose() + lambda * Eigen::Matrix<double, 6, 6>::Identity();
-  Eigen::VectorXd wrench = A.ldlt().solve(J * tau_ext);
+  const double lambda = params_.lambda_regularization;  // Regularization parameter
+  Eigen::VectorXd wrench;
+  if (params_.use_svd_solver) {
+    Eigen::MatrixXd J_reg = J.transpose();
+    J_reg.diagonal().array() += lambda;
+    Eigen::BDCSVD<Eigen::MatrixXd> svd(J_reg, Eigen::ComputeThinU | Eigen::ComputeThinV);
+    wrench = svd.solve(tau_ext);
+  } else {
+    Eigen::Matrix<double, 6, 6> A = J * J.transpose() + lambda * Eigen::Matrix<double, 6, 6>::Identity();
+    wrench = A.ldlt().solve(J * tau_ext);
+  }
 
   // Publish the wrench as wrench stamped
 

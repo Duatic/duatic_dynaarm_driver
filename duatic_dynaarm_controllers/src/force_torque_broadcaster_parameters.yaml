@@ -17,3 +17,7 @@ force_torque_broadcaster:
     type: double
     default_value:  0.0001
     description: "Regularization parameter for solving for the wrench"
+  use_svd_solver:
+    type: bool
+    default_value: false
+    description: "Use the SVD solver strateg for the wrech instead of the  DLS approach"
