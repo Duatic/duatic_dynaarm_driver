@@ -173,6 +173,7 @@ ForceTorqueBroadcaster::on_activate([[maybe_unused]] const rclcpp_lifecycle::Sta
   joint_effort_state_interfaces_.clear();
   joint_position_state_interfaces_.clear();
   joint_velocity_state_interfaces_.clear();
+  joint_acceleration_state_interfaces_.clear();
 
   // get the actual interface in an ordered way (same order as the joints parameter)
   if (!controller_interface::get_ordered_interfaces(
@@ -242,7 +243,8 @@ controller_interface::return_type ForceTorqueBroadcaster::update([[maybe_unused]
   forwardKinematics(pinocchio_model_, pinocchio_data_, q, v, a);
   const auto tau = pinocchio::rnea(pinocchio_model_, pinocchio_data_, q, v, a);
   // These are the actual external torques
-  Eigen::VectorXd tau_ext = torque_meas - tau;
+  // Note: inverted because of sign convention
+  Eigen::VectorXd tau_ext = tau - torque_meas;
 
   pinocchio::computeJointJacobians(pinocchio_model_, pinocchio_data_, q);
   pinocchio::updateFramePlacements(pinocchio_model_, pinocchio_data_);
