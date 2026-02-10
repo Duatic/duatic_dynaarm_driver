@@ -1,0 +1,23 @@
+force_torque_broadcaster:
+  joints:
+    type: string_array
+    default_value: []
+    description: "Names of joints used by the controller"
+    validation:
+      unique<>: null
+  arm_name:
+    type: string
+    default_value: "dynaarm"
+    description: "name of the arm hardware interface"
+  endeffector_frame:
+    type: string
+    default_value: "/flange"
+    description: "Name of the virtual endeffector frame"
+  lambda_regularization:
+    type: double
+    default_value:  0.0001
+    description: "Regularization parameter for solving for the wrench"
+  use_svd_solver:
+    type: bool
+    default_value: false
+    description: "Use the SVD solver strateg for the wrech instead of the  DLS approach"
