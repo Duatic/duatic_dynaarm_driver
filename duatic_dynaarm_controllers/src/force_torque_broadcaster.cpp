@@ -34,6 +34,7 @@
 #include <pinocchio/algorithm/frames.hpp>
 #include <pinocchio/algorithm/rnea.hpp>
 #include <pinocchio/algorithm/kinematics.hpp>
+#include <duatic_dynaarm_controllers/ros2_control_compat.hpp>
 
 namespace duatic_dynaarm_controllers
 {
@@ -159,9 +160,9 @@ ForceTorqueBroadcaster::on_configure([[maybe_unused]] const rclcpp_lifecycle::St
   external_torques_pub__rt_ = std::make_unique<MeasuredTorquesPublisher>(external_torques_pub_);
 
   zero_service_ = get_node()->create_service<std_srvs::srv::Trigger>(
-      "~/zero", [&](std_srvs::srv::Trigger::Request::SharedPtr req, std_srvs::srv::Trigger::Response::SharedPtr res) {
-        wrench_offset_ = wrench_raw_msg_;
-      });
+      "~/zero",
+      [&]([[maybe_unused]] std_srvs::srv::Trigger::Request::SharedPtr req,
+          [[maybe_unused]] std_srvs::srv::Trigger::Response::SharedPtr res) { wrench_offset_ = wrench_raw_msg_; });
 
   return controller_interface::CallbackReturn::SUCCESS;
 }
@@ -234,10 +235,14 @@ controller_interface::return_type ForceTorqueBroadcaster::update([[maybe_unused]
       return controller_interface::return_type::ERROR;
     }
     // Pinocchio joint index starts at 1, q/v index is idx-1
-    q[pinocchio_model_.joints[idx].idx_q()] = joint_position_state_interfaces_.at(i).get().get_value();
-    v[pinocchio_model_.joints[idx].idx_v()] = joint_velocity_state_interfaces_.at(i).get().get_value();
-    a[pinocchio_model_.joints[idx].idx_v()] = joint_acceleration_state_interfaces_.at(i).get().get_value();
-    torque_meas[pinocchio_model_.joints[idx].idx_v()] = joint_effort_state_interfaces_.at(i).get().get_value();
+    q[pinocchio_model_.joints[idx].idx_q()] =
+        duatic_dynaarm_controllers::compat::require_value(joint_position_state_interfaces_.at(i).get());
+    v[pinocchio_model_.joints[idx].idx_v()] =
+        duatic_dynaarm_controllers::compat::require_value(joint_velocity_state_interfaces_.at(i).get());
+    a[pinocchio_model_.joints[idx].idx_v()] =
+        duatic_dynaarm_controllers::compat::require_value(joint_acceleration_state_interfaces_.at(i).get());
+    torque_meas[pinocchio_model_.joints[idx].idx_v()] =
+        duatic_dynaarm_controllers::compat::require_value(joint_effort_state_interfaces_.at(i).get());
   }
 
   forwardKinematics(pinocchio_model_, pinocchio_data_, q, v, a);
@@ -284,10 +289,7 @@ controller_interface::return_type ForceTorqueBroadcaster::update([[maybe_unused]
 
   // and we try to have our realtime publisher publish the message
   // if this doesn't succeed - well it will probably next time
-  if (wrench_pub_rt_->trylock()) {
-    wrench_pub_rt_->msg_ = wrench_msg_;
-    wrench_pub_rt_->unlockAndPublish();
-  }
+  duatic_dynaarm_controllers::compat::publish_rt(wrench_pub_rt_, wrench_msg_);
 
   MeasuredTorques torques_msg;
   torques_msg.header = wrench_msg_.header;
@@ -300,10 +302,7 @@ controller_interface::return_type ForceTorqueBroadcaster::update([[maybe_unused]
     torques_msg.torques.push_back(effort);
   }
 
-  if (external_torques_pub__rt_->trylock()) {
-    external_torques_pub__rt_->msg_ = torques_msg;
-    external_torques_pub__rt_->unlockAndPublish();
-  }
+  duatic_dynaarm_controllers::compat::publish_rt(external_torques_pub__rt_, torques_msg);
 
   return controller_interface::return_type::OK;
 }
