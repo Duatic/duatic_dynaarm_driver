@@ -94,6 +94,8 @@ DynaArmMockHardwareInterface::export_unlisted_command_interface_descriptions()
     cmd_mapping[get_interface_name(drive->get_name(), hardware_interface::HW_IF_VELOCITY)] = &cmd.velocity;
     cmd_mapping[get_interface_name(drive->get_name(), hardware_interface::HW_IF_ACCELERATION)] = &cmd.acceleration;
     cmd_mapping[get_interface_name(drive->get_name(), hardware_interface::HW_IF_EFFORT)] = &cmd.torque;
+
+    // TODO append to class global mapping
   }
 
   for (auto& cmd_interface : command_interfaces) {
@@ -177,6 +179,12 @@ DynaArmMockHardwareInterface::on_configure([[maybe_unused]] const rclcpp_lifecyc
       return hardware_interface::CallbackReturn::FAILURE;
     }
   }
+
+  // And obtain the handle for the freeze mode interface
+  freeze_mode_interface_ = get_command_interface_handle(get_hardware_info().name + "/freeze_mode");
+
+  state_interface_mapping_ = create_state_interface_mapping(state_interface_pre_mapping_, *this);
+  command_interface_mapping_ = create_command_interface_mapping(command_interface_pre_mapping_, *this);
   return hardware_interface::CallbackReturn::SUCCESS;
 }
 hardware_interface::CallbackReturn
@@ -245,6 +253,7 @@ hardware_interface::return_type DynaArmMockHardwareInterface::write([[maybe_unus
 
   // TODO(firesurfer) port fancy self collision avoidance logic
 
+  const bool enforced_freeze = freeze_mode_interface_->get_value() != 0.0;
   // Stage all commands
   for (std::size_t i = 0; i < drives_.size(); i++) {
     auto& drive = drives_[i];
@@ -255,6 +264,8 @@ hardware_interface::return_type DynaArmMockHardwareInterface::write([[maybe_unus
     command.joint_velocity = cmd.velocity;
     command.joint_acceleration = cmd.acceleration;
     command.joint_torque = cmd.torque;
+    // TODO(firesurfer) - we should really use the bool type here !
+    command.joint_freeze_mode = enforced_freeze ? 1.0 : 0.0;
 
     drive->stage_command(command);
   }

@@ -48,7 +48,7 @@
 // sdk
 #include <duatic_ros2control_hardware/duadrive_interface.hpp>
 #include <duatic_dynaarm_driver/types.hpp>
-
+#include <duatic_ros2control_hardware/interface_utils.hpp>
 namespace duatic_dynaarm_driver
 {
 
@@ -84,6 +84,9 @@ private:
 
   std::vector<CoupledCommand> commands_coupled_kinematics_;
   std::vector<SerialCommand> commands_serial_kinematics_;
+
+  std::unordered_map<std::string, duatic_ros2control_hardware::SupportedVariant> state_interface_pre_mapping_;
+  std::unordered_map<std::string, duatic_ros2control_hardware::SupportedVariant> command_interface_pre_mapping_;
 
   duatic_ros2control_hardware::StateInterfaceMapping state_interface_mapping_;
   duatic_ros2control_hardware::CommandInterfaceMapping command_interface_mapping_;
