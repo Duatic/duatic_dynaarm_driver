@@ -41,8 +41,8 @@ DynaArmHardwareInterface::export_unlisted_state_interface_descriptions()
   std::vector<hardware_interface::InterfaceDescription> state_interfaces;
 
   for (const auto& drive : drives_) {
-    RCLCPP_INFO_STREAM(logger_, "Setting up state interfaces for drive: " << drive.get_name());
-    const auto drive_state_interfaces = drive.get_state_interface_descriptions();
+    RCLCPP_INFO_STREAM(logger_, "Setting up state interfaces for drive: " << drive->get_name());
+    const auto drive_state_interfaces = drive->get_state_interface_descriptions();
     state_interfaces.insert(state_interfaces.end(), drive_state_interfaces.begin(), drive_state_interfaces.end());
   }
 
@@ -51,18 +51,18 @@ DynaArmHardwareInterface::export_unlisted_state_interface_descriptions()
     auto& drive = drives_[i];
     auto& state = state_serial_kinematics_[i];
 
-    auto state_mapping = drive.get_default_state_mapping();
+    auto state_mapping = drive->get_default_state_mapping();
     // Now comes the magic - we replace the "position, velocity, acceleration, torque" fields (+ their commanded
     // counterparts) with our local ones that have the translated kinematics
-    state_mapping[get_interface_name(drive.get_name(), hardware_interface::HW_IF_POSITION)] = &state.position;
-    state_mapping[get_interface_name(drive.get_name(), hardware_interface::HW_IF_VELOCITY)] = &state.velocity;
-    state_mapping[get_interface_name(drive.get_name(), hardware_interface::HW_IF_ACCELERATION)] = &state.acceleration;
-    state_mapping[get_interface_name(drive.get_name(), hardware_interface::HW_IF_EFFORT)] = &state.torque;
+    state_mapping[get_interface_name(drive->get_name(), hardware_interface::HW_IF_POSITION)] = &state.position;
+    state_mapping[get_interface_name(drive->get_name(), hardware_interface::HW_IF_VELOCITY)] = &state.velocity;
+    state_mapping[get_interface_name(drive->get_name(), hardware_interface::HW_IF_ACCELERATION)] = &state.acceleration;
+    state_mapping[get_interface_name(drive->get_name(), hardware_interface::HW_IF_EFFORT)] = &state.torque;
 
-    state_mapping[get_interface_name(drive.get_name(), "position_commanded")] = &state.position_commanded;
-    state_mapping[get_interface_name(drive.get_name(), "velocity_commanded")] = &state.velocity_commanded;
-    state_mapping[get_interface_name(drive.get_name(), "acceleration_commanded")] = &state.acceleration_commanded;
-    state_mapping[get_interface_name(drive.get_name(), "effort_commanded")] = &state.torque_commanded;
+    state_mapping[get_interface_name(drive->get_name(), "position_commanded")] = &state.position_commanded;
+    state_mapping[get_interface_name(drive->get_name(), "velocity_commanded")] = &state.velocity_commanded;
+    state_mapping[get_interface_name(drive->get_name(), "acceleration_commanded")] = &state.acceleration_commanded;
+    state_mapping[get_interface_name(drive->get_name(), "effort_commanded")] = &state.torque_commanded;
   }
   return state_interfaces;
 }
@@ -72,8 +72,8 @@ DynaArmHardwareInterface::export_unlisted_command_interface_descriptions()
   std::vector<hardware_interface::InterfaceDescription> command_interfaces;
 
   for (const auto& drive : drives_) {
-    RCLCPP_INFO_STREAM(logger_, "Setting up state interfaces for drive: " << drive.get_name());
-    const auto drive_command_interfaces = drive.get_command_interface_descriptions();
+    RCLCPP_INFO_STREAM(logger_, "Setting up state interfaces for drive: " << drive->get_name());
+    const auto drive_command_interfaces = drive->get_command_interface_descriptions();
     command_interfaces.insert(command_interfaces.end(), drive_command_interfaces.begin(),
                               drive_command_interfaces.end());
   }
@@ -82,13 +82,13 @@ DynaArmHardwareInterface::export_unlisted_command_interface_descriptions()
     auto& drive = drives_[i];
     auto& cmd = commands_serial_kinematics_[i];
 
-    auto cmd_mapping = drive.get_default_command_mapping();
+    auto cmd_mapping = drive->get_default_command_mapping();
     // Now comes the magic - we replace the "position, velocity, acceleration, torque" fields (+ their commanded
     // counterparts) with our local ones that have the translated kinematics
-    cmd_mapping[get_interface_name(drive.get_name(), hardware_interface::HW_IF_POSITION)] = &cmd.position;
-    cmd_mapping[get_interface_name(drive.get_name(), hardware_interface::HW_IF_VELOCITY)] = &cmd.velocity;
-    cmd_mapping[get_interface_name(drive.get_name(), hardware_interface::HW_IF_ACCELERATION)] = &cmd.acceleration;
-    cmd_mapping[get_interface_name(drive.get_name(), hardware_interface::HW_IF_EFFORT)] = &cmd.torque;
+    cmd_mapping[get_interface_name(drive->get_name(), hardware_interface::HW_IF_POSITION)] = &cmd.position;
+    cmd_mapping[get_interface_name(drive->get_name(), hardware_interface::HW_IF_VELOCITY)] = &cmd.velocity;
+    cmd_mapping[get_interface_name(drive->get_name(), hardware_interface::HW_IF_ACCELERATION)] = &cmd.acceleration;
+    cmd_mapping[get_interface_name(drive->get_name(), hardware_interface::HW_IF_EFFORT)] = &cmd.torque;
   }
 
   return command_interfaces;
@@ -115,7 +115,7 @@ DynaArmHardwareInterface::on_init(const hardware_interface::HardwareComponentInt
 
     RCLCPP_INFO_STREAM(logger_, "Setup drive instance for joint: " << joint_name << " on ethercat bus:" << ethercat_bus
                                                                    << " at address: " << address);
-    drives_.emplace_back(DuaDriveInterface{ logger_ });
+    drives_.emplace_back(std::make_unique<DuaDriveInterface>(logger_));
     // As we need to apply the kinematic translation we need some place to store the corresponding data
     // TODO(firesurfer) we could ellide copies if we would directly use pointers on the state interface
     state_coupled_kinematics_.emplace_back(CoupledJointState{});
@@ -124,11 +124,11 @@ DynaArmHardwareInterface::on_init(const hardware_interface::HardwareComponentInt
     commands_coupled_kinematics_.emplace_back(SerialCommand{});
     commands_serial_kinematics_.emplace_back(CoupledCommand{});
     // Init doesn't really do anything apart from setting parameters
-    drives_.back().init(DuaDriveInterfaceParameters{ .ethercat_bus = ethercat_bus,
-                                                     .joint_name = joint_name,
-                                                     .drive_parameter_file_path = device_file_path,
-                                                     .drive_default_parameter_file_path = default_parameter_file_path,
-                                                     .device_address = address });
+    drives_.back()->init(DuaDriveInterfaceParameters{ .ethercat_bus = ethercat_bus,
+                                                      .joint_name = joint_name,
+                                                      .drive_parameter_file_path = device_file_path,
+                                                      .drive_default_parameter_file_path = default_parameter_file_path,
+                                                      .device_address = address });
   }
   return hardware_interface::CallbackReturn::SUCCESS;
 }
@@ -139,8 +139,8 @@ DynaArmHardwareInterface::on_configure([[maybe_unused]] const rclcpp_lifecycle::
   for (auto& drive : drives_) {
     // Call configure for each drive and propagate errors if necessary
     // We currently treat every error that can happen in this stage as fatal
-    if (drive.configure() != hardware_interface::CallbackReturn::SUCCESS) {
-      RCLCPP_FATAL_STREAM(logger_, "Failed to 'configure' drive: " << drive.get_name() << ". Aborting startup!");
+    if (drive->configure() != hardware_interface::CallbackReturn::SUCCESS) {
+      RCLCPP_FATAL_STREAM(logger_, "Failed to 'configure' drive: " << drive->get_name() << ". Aborting startup!");
       return hardware_interface::CallbackReturn::FAILURE;
     }
   }
@@ -152,8 +152,8 @@ DynaArmHardwareInterface::on_activate([[maybe_unused]] const rclcpp_lifecycle::S
   for (auto& drive : drives_) {
     // Call activate for each drive and propagate errors if necessary
     // We currently treat every error that can happen in this stage as fatal
-    if (drive.activate() != hardware_interface::CallbackReturn::SUCCESS) {
-      RCLCPP_FATAL_STREAM(logger_, "Failed to 'activate' drive: " << drive.get_name() << ". Aborting startup!");
+    if (drive->activate() != hardware_interface::CallbackReturn::SUCCESS) {
+      RCLCPP_FATAL_STREAM(logger_, "Failed to 'activate' drive: " << drive->get_name() << ". Aborting startup!");
       return hardware_interface::CallbackReturn::FAILURE;
     }
   }
@@ -165,8 +165,8 @@ DynaArmHardwareInterface::on_deactivate(const rclcpp_lifecycle::State& /*previou
 {
   for (auto& drive : drives_) {
     // Call deactivate for each drive and propagate errors if necessary
-    if (drive.deactivate() != hardware_interface::CallbackReturn::SUCCESS) {
-      RCLCPP_FATAL_STREAM(logger_, "Failed to 'deactivate' drive: " << drive.get_name() << ". Aborting startup!");
+    if (drive->deactivate() != hardware_interface::CallbackReturn::SUCCESS) {
+      RCLCPP_FATAL_STREAM(logger_, "Failed to 'deactivate' drive: " << drive->get_name() << ". Aborting startup!");
       return hardware_interface::CallbackReturn::FAILURE;
     }
   }
@@ -181,13 +181,13 @@ hardware_interface::return_type DynaArmHardwareInterface::read([[maybe_unused]] 
     auto& drive = drives_[i];
     auto& state = state_coupled_kinematics_[i];
     // Try to read from each drive - in case of an error
-    if (drive.read() != hardware_interface::return_type::OK) {
-      RCLCPP_ERROR_STREAM(logger_, "Failed to 'read' from drive: " << drive.get_name());
+    if (drive->read() != hardware_interface::return_type::OK) {
+      RCLCPP_ERROR_STREAM(logger_, "Failed to 'read' from drive: " << drive->get_name());
       return hardware_interface::return_type::ERROR;
     }
 
     // Update the coupled state (one could call this motor readings)
-    const auto& latest_reading = drive.get_last_state();
+    const auto& latest_reading = drive->get_last_state();
     state.position = latest_reading.joint_position;
     state.velocity = latest_reading.joint_velocity;
     state.acceleration = latest_reading.joint_acceleration;
@@ -210,28 +210,47 @@ hardware_interface::return_type DynaArmHardwareInterface::write([[maybe_unused]]
   // Translated commands to coupled kinematics
   kinematics::map_from_serial_to_coupled(commands_serial_kinematics_, commands_coupled_kinematics_);
 
+  // TODO(firesurfer) port fancy self collision avoidance logic
+
+  // Stage all commands
   for (std::size_t i = 0; i < drives_.size(); i++) {
     auto& drive = drives_[i];
     auto& cmd = commands_coupled_kinematics_[i];
 
-    auto command = drive.get_last_command();
+    auto command = drive->get_last_command();
     command.joint_position = cmd.position;
     command.joint_velocity = cmd.velocity;
     command.joint_acceleration = cmd.acceleration;
     command.joint_torque = cmd.torque;
 
-    drive.stage_command(command);
+    drive->stage_command(command);
   }
+
+  // Perform actual write action
+  // Note this is still asynchronous to the bus communication
+  for (auto& drive : drives_) {
+    if (drive->write() != hardware_interface::return_type::OK) {
+      RCLCPP_ERROR_STREAM(logger_, "Failed to 'write' to drive: " << drive->get_name());
+      return hardware_interface::return_type::ERROR;
+    }
+  }
+  return hardware_interface::return_type::OK;
 }
 
 hardware_interface::return_type DynaArmHardwareInterface::prepare_command_mode_switch(
     const std::vector<std::string>& start_interfaces, const std::vector<std::string>& stop_interfaces)
 {
+  return hardware_interface::return_type::OK;
 }
 
 hardware_interface::return_type DynaArmHardwareInterface::perform_command_mode_switch(
     const std::vector<std::string>& start_interfaces, const std::vector<std::string>& stop_interfaces)
 {
+  const auto next_mode = select_mode(start_interfaces, stop_interfaces, logger_);
+  for (auto& drive : drives_) {
+    drive->configure_drive_mode(next_mode);
+  }
+  return hardware_interface::return_type::OK;
 }
 
 DynaArmHardwareInterface::~DynaArmHardwareInterface()

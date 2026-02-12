@@ -67,7 +67,6 @@ public:
   hardware_interface::CallbackReturn on_configure(const rclcpp_lifecycle::State& previous_state) override;
   hardware_interface::CallbackReturn on_activate(const rclcpp_lifecycle::State& previous_state) override;
   hardware_interface::CallbackReturn on_deactivate(const rclcpp_lifecycle::State& previous_state) override;
-  hardware_interface::CallbackReturn on_error(const rclcpp_lifecycle::State& previous_state) override;
 
   hardware_interface::return_type read(const rclcpp::Time& time, const rclcpp::Duration& period) override;
   hardware_interface::return_type write(const rclcpp::Time& time, const rclcpp::Duration& period) override;
@@ -79,7 +78,7 @@ public:
                                                               const std::vector<std::string>& stop_interfaces) override;
 
 private:
-  std::vector<duatic_ros2control_hardware::DuaDriveInterface> drives_;
+  std::vector<duatic_ros2control_hardware::DuaDriveInterface::UniquePtr> drives_;
   std::vector<CoupledJointState> state_coupled_kinematics_;
   std::vector<SerialJointState> state_serial_kinematics_;
 

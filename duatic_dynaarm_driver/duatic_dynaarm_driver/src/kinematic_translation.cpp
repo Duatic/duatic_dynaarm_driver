@@ -132,15 +132,17 @@ static Eigen::VectorXd map_from_serial_to_coupled_torques(const Eigen::VectorXd&
 
 void map_from_coupled_to_serial(std::span<const CoupledJointState> input, std::span<SerialJointState> output)
 {
-  Eigen::VectorXd p_c;
-  Eigen::VectorXd v_c;
-  Eigen::VectorXd a_c;
-  Eigen::VectorXd t_c;
+  assert(input.size() == output.size());
+  const std::size_t n = input.size();
+  Eigen::VectorXd p_c(n);
+  Eigen::VectorXd v_c(n);
+  Eigen::VectorXd a_c(n);
+  Eigen::VectorXd t_c(n);
 
-  Eigen::VectorXd p_commanded_c;
-  Eigen::VectorXd v_commanded_c;
-  Eigen::VectorXd a_commanded_c;
-  Eigen::VectorXd t_commanded_c;
+  Eigen::VectorXd p_commanded_c(n);
+  Eigen::VectorXd v_commanded_c(n);
+  Eigen::VectorXd a_commanded_c(n);
+  Eigen::VectorXd t_commanded_c(n);
 
   for (std::size_t i = 0; i < input.size(); i++) {
     p_c[i] = input[i].position;
@@ -181,15 +183,17 @@ void map_from_coupled_to_serial(std::span<const CoupledJointState> input, std::s
 
 void map_from_serial_to_coupled(std::span<const SerialJointState> input, std::span<CoupledJointState> output)
 {
-  Eigen::VectorXd p_s;
-  Eigen::VectorXd v_s;
-  Eigen::VectorXd a_s;
-  Eigen::VectorXd t_s;
+  assert(input.size() == output.size());
+  const std::size_t n = input.size();
+  Eigen::VectorXd p_s(n);
+  Eigen::VectorXd v_s(n);
+  Eigen::VectorXd a_s(n);
+  Eigen::VectorXd t_s(n);
 
-  Eigen::VectorXd p_commanded_s;
-  Eigen::VectorXd v_commanded_s;
-  Eigen::VectorXd a_commanded_s;
-  Eigen::VectorXd t_commanded_s;
+  Eigen::VectorXd p_commanded_s(n);
+  Eigen::VectorXd v_commanded_s(n);
+  Eigen::VectorXd a_commanded_s(n);
+  Eigen::VectorXd t_commanded_s(n);
 
   for (std::size_t i = 0; i < input.size(); i++) {
     p_s[i] = input[i].position;
@@ -228,10 +232,12 @@ void map_from_serial_to_coupled(std::span<const SerialJointState> input, std::sp
 
 void map_from_coupled_to_serial(std::span<const CoupledCommand> input, std::span<SerialCommand> output)
 {
-  Eigen::VectorXd p_c;
-  Eigen::VectorXd v_c;
-  Eigen::VectorXd a_c;
-  Eigen::VectorXd t_c;
+  assert(input.size() == output.size());
+  const std::size_t n = input.size();
+  Eigen::VectorXd p_c(n);
+  Eigen::VectorXd v_c(n);
+  Eigen::VectorXd a_c(n);
+  Eigen::VectorXd t_c(n);
 
   for (std::size_t i = 0; i < input.size(); i++) {
     p_c[i] = input[i].position;
@@ -255,10 +261,12 @@ void map_from_coupled_to_serial(std::span<const CoupledCommand> input, std::span
 
 void map_from_serial_to_coupled(std::span<const SerialCommand> input, std::span<CoupledCommand> output)
 {
-  Eigen::VectorXd p_s;
-  Eigen::VectorXd v_s;
-  Eigen::VectorXd a_s;
-  Eigen::VectorXd t_s;
+  assert(input.size() == output.size());
+  const std::size_t n = input.size();
+  Eigen::VectorXd p_s(n);
+  Eigen::VectorXd v_s(n);
+  Eigen::VectorXd a_s(n);
+  Eigen::VectorXd t_s(n);
 
   for (std::size_t i = 0; i < input.size(); i++) {
     p_s[i] = input[i].position;

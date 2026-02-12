@@ -29,8 +29,8 @@ endforeach()
 
 add_library(${PROJECT_NAME} SHARED
   src/dynaarm_hardware_interface.cpp
-  #src/dynaarm_mock_hardware_interface.cpp
-  #src/dynaarm_hardware_interface_base.cpp
+  src/dynaarm_mock_hardware_interface.cpp
+  src/kinematic_translation.cpp
 )
 target_include_directories(${PROJECT_NAME} PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

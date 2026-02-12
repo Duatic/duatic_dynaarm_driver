@@ -44,25 +44,49 @@
 #include <rclcpp_lifecycle/state.hpp>
 #include <ament_index_cpp/get_package_share_directory.hpp>
 
-// hardware interface
-#include <duatic_dynaarm_driver/dynaarm_hardware_interface_base.hpp>
+// sdk
+#include <duatic_ros2control_hardware/duadrive_interface_mock.hpp>
+#include <duatic_dynaarm_driver/types.hpp>
 
 namespace duatic_dynaarm_driver
 {
-class DynaarmMockHardwareInterface : public DynaArmHardwareInterfaceBase
+class DynaArmMockHardwareInterface : public hardware_interface::SystemInterface
 {
 public:
-  RCLCPP_SHARED_PTR_DEFINITIONS(DynaarmMockHardwareInterface)
+  RCLCPP_SHARED_PTR_DEFINITIONS(DynaArmMockHardwareInterface)
+  DynaArmMockHardwareInterface();
+  ~DynaArmMockHardwareInterface();
 
-  ~DynaarmMockHardwareInterface();
+  std::vector<hardware_interface::InterfaceDescription> export_unlisted_state_interface_descriptions() override;
+  std::vector<hardware_interface::InterfaceDescription> export_unlisted_command_interface_descriptions() override;
 
-  hardware_interface::CallbackReturn on_init_derived(const hardware_interface::HardwareInfo& system_info) override;
+  hardware_interface::CallbackReturn
+  on_init(const hardware_interface::HardwareComponentInterfaceParams& system_info) override;
+  hardware_interface::CallbackReturn on_configure(const rclcpp_lifecycle::State& previous_state) override;
+  hardware_interface::CallbackReturn on_activate(const rclcpp_lifecycle::State& previous_state) override;
+  hardware_interface::CallbackReturn on_deactivate(const rclcpp_lifecycle::State& previous_state) override;
 
-  hardware_interface::CallbackReturn on_activate_derived(const rclcpp_lifecycle::State& previous_state) override;
-  hardware_interface::CallbackReturn on_deactivate_derived(const rclcpp_lifecycle::State& previous_state) override;
+  hardware_interface::return_type read(const rclcpp::Time& time, const rclcpp::Duration& period) override;
+  hardware_interface::return_type write(const rclcpp::Time& time, const rclcpp::Duration& period) override;
 
-  void read_motor_states() override;
-  void write_motor_commands() override;
+  hardware_interface::return_type prepare_command_mode_switch(const std::vector<std::string>& start_interfaces,
+                                                              const std::vector<std::string>& stop_interfaces) override;
+
+  hardware_interface::return_type perform_command_mode_switch(const std::vector<std::string>& start_interfaces,
+                                                              const std::vector<std::string>& stop_interfaces) override;
+
+private:
+  std::vector<duatic_ros2control_hardware::DuaDriveInterfaceMock::UniquePtr> drives_;
+  std::vector<CoupledJointState> state_coupled_kinematics_;
+  std::vector<SerialJointState> state_serial_kinematics_;
+
+  std::vector<CoupledCommand> commands_coupled_kinematics_;
+  std::vector<SerialCommand> commands_serial_kinematics_;
+
+  duatic_ros2control_hardware::StateInterfaceMapping state_interface_mapping_;
+  duatic_ros2control_hardware::CommandInterfaceMapping command_interface_mapping_;
+
+  rclcpp::Logger logger_;
 };
 
 }  // namespace duatic_dynaarm_driver

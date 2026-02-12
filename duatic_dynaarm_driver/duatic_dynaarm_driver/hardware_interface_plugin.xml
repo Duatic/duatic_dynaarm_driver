@@ -6,8 +6,8 @@
       ROS Control System driver for the Dynaarm
     </description>
   </class>
-  <class name="duatic_dynaarm_driver/DynaarmMockHardwareInterface"
-    type="duatic_dynaarm_driver::DynaarmMockHardwareInterface"
+  <class name="duatic_dynaarm_driver/DynaArmMockHardwareInterface"
+    type="duatic_dynaarm_driver::DynaArmMockHardwareInterface"
     base_class_type="hardware_interface::SystemInterface">
     <description>
       ROS Control System driver for the Dynaarm
