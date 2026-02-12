@@ -37,10 +37,61 @@ DynaArmHardwareInterface::DynaArmHardwareInterface() : logger_(rclcpp::get_logge
 std::vector<hardware_interface::InterfaceDescription>
 DynaArmHardwareInterface::export_unlisted_state_interface_descriptions()
 {
+  // This is rather simple - we just append all state interface descriptions of each drive and are done
+  std::vector<hardware_interface::InterfaceDescription> state_interfaces;
+
+  for (const auto& drive : drives_) {
+    RCLCPP_INFO_STREAM(logger_, "Setting up state interfaces for drive: " << drive.get_name());
+    const auto drive_state_interfaces = drive.get_state_interface_descriptions();
+    state_interfaces.insert(state_interfaces.end(), drive_state_interfaces.begin(), drive_state_interfaces.end());
+  }
+
+  // More interesting is now the internal state data mapping
+  for (std::size_t i = 0; i < drives_.size(); i++) {
+    auto& drive = drives_[i];
+    auto& state = state_serial_kinematics_[i];
+
+    auto state_mapping = drive.get_default_state_mapping();
+    // Now comes the magic - we replace the "position, velocity, acceleration, torque" fields (+ their commanded
+    // counterparts) with our local ones that have the translated kinematics
+    state_mapping[get_interface_name(drive.get_name(), hardware_interface::HW_IF_POSITION)] = &state.position;
+    state_mapping[get_interface_name(drive.get_name(), hardware_interface::HW_IF_VELOCITY)] = &state.velocity;
+    state_mapping[get_interface_name(drive.get_name(), hardware_interface::HW_IF_ACCELERATION)] = &state.acceleration;
+    state_mapping[get_interface_name(drive.get_name(), hardware_interface::HW_IF_EFFORT)] = &state.torque;
+
+    state_mapping[get_interface_name(drive.get_name(), "position_commanded")] = &state.position_commanded;
+    state_mapping[get_interface_name(drive.get_name(), "velocity_commanded")] = &state.velocity_commanded;
+    state_mapping[get_interface_name(drive.get_name(), "acceleration_commanded")] = &state.acceleration_commanded;
+    state_mapping[get_interface_name(drive.get_name(), "effort_commanded")] = &state.torque_commanded;
+  }
+  return state_interfaces;
 }
 std::vector<hardware_interface::InterfaceDescription>
 DynaArmHardwareInterface::export_unlisted_command_interface_descriptions()
 {
+  std::vector<hardware_interface::InterfaceDescription> command_interfaces;
+
+  for (const auto& drive : drives_) {
+    RCLCPP_INFO_STREAM(logger_, "Setting up state interfaces for drive: " << drive.get_name());
+    const auto drive_command_interfaces = drive.get_command_interface_descriptions();
+    command_interfaces.insert(command_interfaces.end(), drive_command_interfaces.begin(),
+                              drive_command_interfaces.end());
+  }
+
+  for (std::size_t i = 0; i < drives_.size(); i++) {
+    auto& drive = drives_[i];
+    auto& cmd = commands_serial_kinematics_[i];
+
+    auto cmd_mapping = drive.get_default_command_mapping();
+    // Now comes the magic - we replace the "position, velocity, acceleration, torque" fields (+ their commanded
+    // counterparts) with our local ones that have the translated kinematics
+    cmd_mapping[get_interface_name(drive.get_name(), hardware_interface::HW_IF_POSITION)] = &cmd.position;
+    cmd_mapping[get_interface_name(drive.get_name(), hardware_interface::HW_IF_VELOCITY)] = &cmd.velocity;
+    cmd_mapping[get_interface_name(drive.get_name(), hardware_interface::HW_IF_ACCELERATION)] = &cmd.acceleration;
+    cmd_mapping[get_interface_name(drive.get_name(), hardware_interface::HW_IF_EFFORT)] = &cmd.torque;
+  }
+
+  return command_interfaces;
 }
 
 hardware_interface::CallbackReturn
@@ -122,7 +173,8 @@ DynaArmHardwareInterface::on_deactivate(const rclcpp_lifecycle::State& /*previou
   return hardware_interface::CallbackReturn::SUCCESS;
 }
 
-hardware_interface::return_type DynaArmHardwareInterface::read(const rclcpp::Time& time, const rclcpp::Duration& period)
+hardware_interface::return_type DynaArmHardwareInterface::read([[maybe_unused]] const rclcpp::Time& time,
+                                                               [[maybe_unused]] const rclcpp::Duration& period)
 {
   // TODO(firesurfer) - replace with std::views::zip (or own implementation) when available
   for (std::size_t i = 0; i < drives_.size(); i++) {
@@ -150,8 +202,8 @@ hardware_interface::return_type DynaArmHardwareInterface::read(const rclcpp::Tim
 
   return hardware_interface::return_type::OK;
 }
-hardware_interface::return_type DynaArmHardwareInterface::write(const rclcpp::Time& time,
-                                                                const rclcpp::Duration& period)
+hardware_interface::return_type DynaArmHardwareInterface::write([[maybe_unused]] const rclcpp::Time& time,
+                                                                [[maybe_unused]] const rclcpp::Duration& period)
 {
   // Get commands from the ros2control exposed command interfaces
   update_command_interfaces(command_interface_mapping_, *this);

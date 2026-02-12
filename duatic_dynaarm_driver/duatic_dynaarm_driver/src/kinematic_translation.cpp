@@ -137,11 +137,21 @@ void map_from_coupled_to_serial(std::span<const CoupledJointState> input, std::s
   Eigen::VectorXd a_c;
   Eigen::VectorXd t_c;
 
+  Eigen::VectorXd p_commanded_c;
+  Eigen::VectorXd v_commanded_c;
+  Eigen::VectorXd a_commanded_c;
+  Eigen::VectorXd t_commanded_c;
+
   for (std::size_t i = 0; i < input.size(); i++) {
     p_c[i] = input[i].position;
     v_c[i] = input[i].velocity;
     a_c[i] = input[i].acceleration;
     t_c[i] = input[i].torque;
+
+    p_commanded_c[i] = input[i].position_commanded;
+    v_commanded_c[i] = input[i].velocity_commanded;
+    a_commanded_c[i] = input[i].acceleration_commanded;
+    t_commanded_c[i] = input[i].torque_commanded;
   }
 
   Eigen::VectorXd p_s = map_from_coupled_to_serial_coordinates(p_c);
@@ -149,11 +159,21 @@ void map_from_coupled_to_serial(std::span<const CoupledJointState> input, std::s
   Eigen::VectorXd a_s = map_from_coupled_to_serial_coordinates(a_c);
   Eigen::VectorXd t_s = map_from_coupled_to_serial_torques(t_c);
 
+  Eigen::VectorXd p_commanded_s = map_from_coupled_to_serial_coordinates(p_commanded_c);
+  Eigen::VectorXd v_commanded_s = map_from_coupled_to_serial_coordinates(v_commanded_c);
+  Eigen::VectorXd a_commanded_s = map_from_coupled_to_serial_coordinates(a_commanded_c);
+  Eigen::VectorXd t_commanded_s = map_from_coupled_to_serial_torques(t_commanded_c);
+
   for (std::size_t i = 0; i < input.size(); i++) {
     output[i].position = p_s[i];
     output[i].velocity = v_s[i];
     output[i].acceleration = a_s[i];
     output[i].torque = t_s[i];
+
+    output[i].position_commanded = p_commanded_s[i];
+    output[i].velocity_commanded = v_commanded_s[i];
+    output[i].acceleration_commanded = a_commanded_s[i];
+    output[i].torque_commanded = t_commanded_s[i];
   }
 
   // TODO(firesurfer) add commanded values
@@ -166,11 +186,21 @@ void map_from_serial_to_coupled(std::span<const SerialJointState> input, std::sp
   Eigen::VectorXd a_s;
   Eigen::VectorXd t_s;
 
+  Eigen::VectorXd p_commanded_s;
+  Eigen::VectorXd v_commanded_s;
+  Eigen::VectorXd a_commanded_s;
+  Eigen::VectorXd t_commanded_s;
+
   for (std::size_t i = 0; i < input.size(); i++) {
     p_s[i] = input[i].position;
     v_s[i] = input[i].velocity;
     a_s[i] = input[i].acceleration;
     t_s[i] = input[i].torque;
+
+    p_commanded_s[i] = input[i].position_commanded;
+    v_commanded_s[i] = input[i].position_commanded;
+    a_commanded_s[i] = input[i].position_commanded;
+    t_commanded_s[i] = input[i].position_commanded;
   }
 
   Eigen::VectorXd p_c = map_from_serial_to_coupled_coordinates(p_s);
@@ -178,14 +208,22 @@ void map_from_serial_to_coupled(std::span<const SerialJointState> input, std::sp
   Eigen::VectorXd a_c = map_from_serial_to_coupled_coordinates(a_s);
   Eigen::VectorXd t_c = map_from_serial_to_coupled_torques(t_s);
 
+  Eigen::VectorXd p_commanded_c = map_from_serial_to_coupled_coordinates(p_commanded_s);
+  Eigen::VectorXd v_commanded_c = map_from_serial_to_coupled_coordinates(v_commanded_s);
+  Eigen::VectorXd a_commanded_c = map_from_serial_to_coupled_coordinates(a_commanded_s);
+  Eigen::VectorXd t_commanded_c = map_from_serial_to_coupled_torques(t_commanded_s);
+
   for (std::size_t i = 0; i < input.size(); i++) {
     output[i].position = p_c[i];
     output[i].velocity = v_c[i];
     output[i].acceleration = a_c[i];
     output[i].torque = t_c[i];
-  }
 
-  // TODO(firesurfer) add commanded values
+    output[i].position_commanded = p_commanded_c[i];
+    output[i].velocity_commanded = v_commanded_c[i];
+    output[i].acceleration_commanded = a_commanded_c[i];
+    output[i].torque_commanded = t_commanded_c[i];
+  }
 }
 
 void map_from_coupled_to_serial(std::span<const CoupledCommand> input, std::span<SerialCommand> output)
