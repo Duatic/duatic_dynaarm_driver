@@ -22,272 +22,169 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <filesystem>
 #include "duatic_dynaarm_driver/dynaarm_hardware_interface.hpp"
-#include "hardware_interface/types/hardware_interface_type_values.hpp"
-#include "ethercat_sdk_master/EthercatMasterSingleton.hpp"
+#include "duatic_dynaarm_driver/kinematic_translation.hpp"
+
+using namespace duatic_ros2control_hardware;  // NOLINT(build/namespaces)
 
 namespace duatic_dynaarm_driver
 {
 
-static void print_drive_status_changes(
-    const std::string& drive_name, const rsl_drive_sdk::Statusword& current_status_word,
-    rsl_drive_sdk::Statusword previous_status_word /*create copy because getmessagesDiff is not const declared*/,
-    rclcpp::Logger& logger)
+DynaArmHardwareInterface::DynaArmHardwareInterface() : logger_(rclcpp::get_logger("DynaArmHardwareInterface"))
 {
-  std::vector<std::string> infos;
-  std::vector<std::string> warnings;
-  std::vector<std::string> errors;
-  std::vector<std::string> fatals;
+}
 
-  current_status_word.getMessagesDiff(previous_status_word, infos, warnings, errors, fatals);
-
-  for (const auto& msg : infos) {
-    RCLCPP_INFO_STREAM(logger, "[" << drive_name << "]:" << msg);
-  }
-  for (const auto& msg : warnings) {
-    RCLCPP_WARN_STREAM(logger, "[" << drive_name << "]:" << msg);
-  }
-  for (const auto& msg : errors) {
-    RCLCPP_ERROR_STREAM(logger, "[" << drive_name << "]:" << msg);
-  }
-  for (const auto& msg : fatals) {
-    RCLCPP_FATAL_STREAM(logger, "[" << drive_name << "]:" << msg);
-  }
+std::vector<hardware_interface::InterfaceDescription>
+DynaArmHardwareInterface::export_unlisted_state_interface_descriptions()
+{
+}
+std::vector<hardware_interface::InterfaceDescription>
+DynaArmHardwareInterface::export_unlisted_command_interface_descriptions()
+{
 }
 
 hardware_interface::CallbackReturn
-DynaArmHardwareInterface::on_init_derived(const hardware_interface::HardwareInfo& system_info)
+DynaArmHardwareInterface::on_init(const hardware_interface::HardwareComponentInterfaceParams& system_info)
 {
-  // configure ethercat bus and drives
-  const auto ethercat_bus = system_info.hardware_parameters.at("ethercat_bus");
-  const ecat_master::EthercatMasterConfiguration ecat_master_config = {
-    .name = "DynaArmHardwareInterface", .networkInterface = ethercat_bus, .timeStep = 0.001
-  };  // TODO(firesurfer) set timestep according to the update rate of ros2control (or spin asynchronously)
+  const auto arm_name = system_info.hardware_info.name;
+  // The logger is now a child logger with a more descriptive name
+  logger_ = logger_.get_child(arm_name);
 
-  // Obtain an instance of the bus from the singleton - if there is no instance it will be created
-  ecat_master_handle_ = ecat_master::EthercatMasterSingleton::instance().aquireMaster(ecat_master_config);
+  const auto ethercat_bus = system_info.hardware_info.hardware_parameters.at("ethercat_bus");
+  // We obtain information about configured joints and create DuaDriveInterface instances from them
+  // and initialize them
+  for (const auto& joint : system_info.hardware_info.joints) {
+    const auto address = std::stoi(joint.parameters.at("address"));
+    const auto joint_name = joint.name;
+    const std::string device_file_path = joint.parameters.at("drive_parameter_file");
+    const std::string default_parameter_file_path = joint.parameters.at("drive_parameter_folder_default") + "/example_"
+                                                                                                            "drive_"
+                                                                                                            "config."
+                                                                                                            "yaml";
 
-  // Every joint refers to a drive
-  for (std::size_t i = 0; i < info_.joints.size(); i++) {
-    const auto address = std::stoi(info_.joints[i].parameters.at("address"));
-    const auto joint_name = info_.joints[i].name;
+    RCLCPP_INFO_STREAM(logger_, "Setup drive instance for joint: " << joint_name << " on ethercat bus:" << ethercat_bus
+                                                                   << " at address: " << address);
+    drives_.emplace_back(DuaDriveInterface{ logger_ });
+    // As we need to apply the kinematic translation we need some place to store the corresponding data
+    // TODO(firesurfer) we could ellide copies if we would directly use pointers on the state interface
+    state_coupled_kinematics_.emplace_back(CoupledJointState{});
+    state_serial_kinematics_.emplace_back(SerialJointState{});
 
-    // We do not want the joint prefix in the path for the parameter files
-    auto joint_wo_prefix = joint_name;
-    const auto tf_prefix = system_info.hardware_parameters.at("tf_prefix");
-    // Check if the joint name starts with the tf_prefix
-    if (joint_name.find(tf_prefix) == 0) {
-      // Remove it from the string
-      joint_wo_prefix.erase(0, tf_prefix.size());
-    }
-
-    // Obtain the parameter file for the currently processed drive
-    const std::string base_directory = info_.hardware_parameters.at("drive_parameter_folder") + "/";
-    std::string device_file_path = base_directory + joint_wo_prefix + ".yaml";
-    // If there is no configuration available for the current joint in the passed parameter folder we load it from the
-    // default folder
-    if (!std::filesystem::exists(device_file_path)) {
-      RCLCPP_WARN_STREAM(logger_, "No configuration found for joint: " << joint_name << " in: " << base_directory
-                                                                       << " Loading drive parameters from default "
-                                                                          "location");
-
-      device_file_path =
-          info_.hardware_parameters.at("drive_parameter_folder_default") + "/" + joint_wo_prefix + ".yaml";
-    }
-    RCLCPP_INFO_STREAM(logger_, "Drive file path " << device_file_path);
-
-    auto drive = rsl_drive_sdk::DriveEthercatDevice::deviceFromFile(device_file_path, joint_name, address,
-
-                                                                    rsl_drive_sdk::PdoTypeEnum::E);
-
-    // Store in our internal list so that we can easy refer to them afterwards
-    drives_.push_back(drive);
-    last_status_words_.push_back({});
-
-    // And attach it to the ethercat master
-    if (ecat_master_handle_.ecat_master->attachDevice(drive) == false) {
-      RCLCPP_ERROR_STREAM(logger_, "Could not attach the slave drive to the master.");
-    }
-
-    RCLCPP_INFO_STREAM(logger_, "Configuring drive: " << joint_name << " at bus address: " << address);
+    commands_coupled_kinematics_.emplace_back(SerialCommand{});
+    commands_serial_kinematics_.emplace_back(CoupledCommand{});
+    // Init doesn't really do anything apart from setting parameters
+    drives_.back().init(DuaDriveInterfaceParameters{ .ethercat_bus = ethercat_bus,
+                                                     .joint_name = joint_name,
+                                                     .drive_parameter_file_path = device_file_path,
+                                                     .drive_default_parameter_file_path = default_parameter_file_path,
+                                                     .device_address = address });
   }
-
-  RCLCPP_INFO_STREAM(logger_, "Successfully initialized dynaarm hardware interface for DynaArmHardwareInterface");
   return hardware_interface::CallbackReturn::SUCCESS;
 }
 
 hardware_interface::CallbackReturn
 DynaArmHardwareInterface::on_configure([[maybe_unused]] const rclcpp_lifecycle::State& previous_state)
 {
-  // This is a bit of a work around but doesn't work otherwise
-  // We separate the activation of the ethercat bus into separate stages
-  // 1. Setup
-  // 2. Activation - only when all handles that where given out in the setup (on_init) mark themselves as ready for
-  // activation the bus will be activated
-  ecat_master::EthercatMasterSingleton::instance().markAsReady(ecat_master_handle_);
-  return hardware_interface::CallbackReturn::SUCCESS;
-}
-hardware_interface::CallbackReturn
-DynaArmHardwareInterface::on_activate_derived([[maybe_unused]] const rclcpp_lifecycle::State& previous_state)
-{
-  return hardware_interface::CallbackReturn::SUCCESS;
-}
-
-hardware_interface::CallbackReturn
-DynaArmHardwareInterface::on_deactivate_derived(const rclcpp_lifecycle::State& /*previous_state*/)
-{
-  for (std::size_t i = 0; i < info_.joints.size(); i++) {
-    auto& drive = drives_.at(i);
-    drive->setFSMGoalState(rsl_drive_sdk::fsm::StateEnum::ControlOp, true, 3.0, 0.01);
-
-    rsl_drive_sdk::Command cmd;
-    cmd.setModeEnum(rsl_drive_sdk::mode::ModeEnum::Freeze);
-    drive->setCommand(cmd);
-  }
-
-  return hardware_interface::CallbackReturn::SUCCESS;
-}
-
-void DynaArmHardwareInterface::read_motor_states()
-{
-  if (!ready_) {
-    if (*ecat_master_handle_.running) {
-      RCLCPP_INFO_STREAM(logger_, "Deferred initialization of arm: " << info_.name);
-      for (std::size_t i = 0; i < info_.joints.size(); i++) {
-        auto& drive = drives_[i];
-        // In case we are in error state clear the error and try again
-        rsl_drive_sdk::Statusword status_word;
-        drive->getStatuswordSdo(status_word);
-        if (status_word.getStateEnum() == rsl_drive_sdk::fsm::StateEnum::Error) {
-          RCLCPP_WARN_STREAM(logger_, "Drive: " << info_.joints.at(i).name << " is in Error state - trying to reset");
-          drive->setControlword(RSL_DRIVE_CW_ID_CLEAR_ERRORS_TO_STANDBY);
-          drive->updateWrite();
-          drive->updateRead();
-          if (!drive->setFSMGoalState(rsl_drive_sdk::fsm::StateEnum::ControlOp, true, 1, 10)) {
-            RCLCPP_FATAL_STREAM(logger_, "Drive: " << info_.joints[i].name << " did not go into ControlOP");
-          } else {
-            RCLCPP_INFO_STREAM(logger_, "Drive: " << info_.joints.at(i).name << " went into ControlOp successfully");
-          }
-        }
-      }
-
-      // On activate is already in the realtime loop (on_configure would be in the non_rt loop)
-      for (std::size_t i = 0; i < info_.joints.size(); i++) {
-        auto& drive = drives_[i];
-
-        // Put into controlOP, in blocking mode.
-        if (!drive->setFSMGoalState(rsl_drive_sdk::fsm::StateEnum::ControlOp, true, 1, 10)) {
-          RCLCPP_FATAL_STREAM(logger_, "Drive: " << info_.joints[i].name
-                                                 << " did not go into ControlOP - this is trouble some and a reason to "
-                                                    "abort. Try to reboot the hardware");
-          return;
-        }
-
-        // Log the firmware information of the drive. Might be useful for debugging issues at customer
-        rsl_drive_sdk::common::BuildInfo info;
-        drive->getBuildInfo(info);
-        RCLCPP_INFO_STREAM(logger_, "Drive info: " << info_.joints[i].name << " Build date: " << info.buildDate
-                                                   << " tag: " << info.gitTag << " hash: " << info.gitHash);
-
-        rsl_drive_sdk::mode::PidGainsF gains;
-        drive->getControlGains(rsl_drive_sdk::mode::ModeEnum::JointPositionVelocityTorquePidGains, gains);
-        joint_command_vector_[i].p_gain = gains.getP();
-        joint_command_vector_[i].i_gain = gains.getI();
-        joint_command_vector_[i].d_gain = gains.getD();
-
-        RCLCPP_INFO_STREAM(logger_, "PID Gains: " << gains);
-      }
-      ready_ = true;
+  for (auto& drive : drives_) {
+    // Call configure for each drive and propagate errors if necessary
+    // We currently treat every error that can happen in this stage as fatal
+    if (drive.configure() != hardware_interface::CallbackReturn::SUCCESS) {
+      RCLCPP_FATAL_STREAM(logger_, "Failed to 'configure' drive: " << drive.get_name() << ". Aborting startup!");
+      return hardware_interface::CallbackReturn::FAILURE;
     }
   }
-
-  if (!ready_) {
-    return;
+  return hardware_interface::CallbackReturn::SUCCESS;
+}
+hardware_interface::CallbackReturn
+DynaArmHardwareInterface::on_activate([[maybe_unused]] const rclcpp_lifecycle::State& previous_state)
+{
+  for (auto& drive : drives_) {
+    // Call activate for each drive and propagate errors if necessary
+    // We currently treat every error that can happen in this stage as fatal
+    if (drive.activate() != hardware_interface::CallbackReturn::SUCCESS) {
+      RCLCPP_FATAL_STREAM(logger_, "Failed to 'activate' drive: " << drive.get_name() << ". Aborting startup!");
+      return hardware_interface::CallbackReturn::FAILURE;
+    }
   }
-
-  for (std::size_t i = 0; i < info_.joints.size(); i++) {
-    // Get a reading from the specific drive and
-    rsl_drive_sdk::ReadingExtended reading;
-    // NOTE: getReading uses a recursive mutex -> It would be better if we could do something like: tryLock and if we
-    // can't look then we try again in the next cycle
-    drives_[i]->getReading(reading);  // Use [ ] instead of at for performance reasons
-
-    // And update the state vector so that controllers can read the current state
-    auto state = reading.getState();
-
-    // Print any status word changes (e.g. motor temperature warning has appeared)
-    // TODO(firesurfer) this might be bad to have in the real time loop
-    const auto current_status_word = state.getStatusword();
-    print_drive_status_changes(info_.joints[i].name, current_status_word, last_status_words_[i], logger_);
-    last_status_words_[i] = current_status_word;
-
-    motor_state_vector_[i].position = state.getJointPosition();
-    motor_state_vector_[i].velocity = state.getJointVelocity();
-    motor_state_vector_[i].acceleration = state.getJointAcceleration();
-    motor_state_vector_[i].effort = state.getJointTorque();
-
-    motor_state_vector_[i].position_commanded = reading.getCommanded().getJointPosition();
-    motor_state_vector_[i].velocity_commanded = reading.getCommanded().getJointVelocity();
-    motor_state_vector_[i].effort_commanded = reading.getCommanded().getJointTorque();
-
-    motor_state_vector_[i].temperature = state.getTemperature();
-    motor_state_vector_[i].temperature_coil_A = state.getCoilTemp1();
-    motor_state_vector_[i].temperature_coil_B = state.getCoilTemp2();
-    motor_state_vector_[i].temperature_coil_C = state.getCoilTemp3();
-    motor_state_vector_[i].bus_voltage = state.getVoltage();
-
-    motor_state_vector_[i].current_d = state.getMeasuredCurrentD();
-    motor_state_vector_[i].current_q = state.getMeasuredCurrentQ();
-
-    motor_state_vector_[i].current_coil_A = state.getMeasuredCurrentPhaseU();
-    motor_state_vector_[i].current_coil_B = state.getMeasuredCurrentPhaseV();
-    motor_state_vector_[i].current_coil_C = state.getMeasuredCurrentPhaseW();
-  }
+  return hardware_interface::CallbackReturn::SUCCESS;
 }
 
-void DynaArmHardwareInterface::write_motor_commands()
+hardware_interface::CallbackReturn
+DynaArmHardwareInterface::on_deactivate(const rclcpp_lifecycle::State& /*previous_state*/)
 {
-  if (!ready_) {
-    return;
+  for (auto& drive : drives_) {
+    // Call deactivate for each drive and propagate errors if necessary
+    if (drive.deactivate() != hardware_interface::CallbackReturn::SUCCESS) {
+      RCLCPP_FATAL_STREAM(logger_, "Failed to 'deactivate' drive: " << drive.get_name() << ". Aborting startup!");
+      return hardware_interface::CallbackReturn::FAILURE;
+    }
   }
-  for (std::size_t i = 0; i < info_.joints.size(); i++) {
-    // Obtain reference to the specific drive
+  return hardware_interface::CallbackReturn::SUCCESS;
+}
+
+hardware_interface::return_type DynaArmHardwareInterface::read(const rclcpp::Time& time, const rclcpp::Duration& period)
+{
+  // TODO(firesurfer) - replace with std::views::zip (or own implementation) when available
+  for (std::size_t i = 0; i < drives_.size(); i++) {
     auto& drive = drives_[i];
-
-    // Only write the command if we are already in the correct state
-    if (drive->goalStateHasBeenReached()) {
-      // Convert command vector into an rsl_drive_sdk::Command
-      // Make sure to be in the right mode
-      rsl_drive_sdk::Command cmd;
-
-      rsl_drive_sdk::mode::PidGainsF gains;
-      gains.setP(motor_command_vector_[i].p_gain);
-      gains.setI(motor_command_vector_[i].i_gain);
-      gains.setD(motor_command_vector_[i].d_gain);
-
-      cmd.setJointPosition(motor_command_vector_[i].position);
-      cmd.setJointVelocity(motor_command_vector_[i].velocity);
-      cmd.setJointTorque(motor_command_vector_[i].effort);
-      cmd.setPidGains(gains);
-
-      if (command_freeze_mode_ == 1.0) {
-        cmd.setModeEnum(rsl_drive_sdk::mode::ModeEnum::Freeze);
-      } else {
-        cmd.setModeEnum(rsl_drive_sdk::mode::ModeEnum::JointPositionVelocityTorquePidGains);
-      }
-
-      // We always fill all command fields but depending on the mode only a subset is used
-      drive->setCommand(cmd);
+    auto& state = state_coupled_kinematics_[i];
+    // Try to read from each drive - in case of an error
+    if (drive.read() != hardware_interface::return_type::OK) {
+      RCLCPP_ERROR_STREAM(logger_, "Failed to 'read' from drive: " << drive.get_name());
+      return hardware_interface::return_type::ERROR;
     }
+
+    // Update the coupled state (one could call this motor readings)
+    const auto& latest_reading = drive.get_last_state();
+    state.position = latest_reading.joint_position;
+    state.velocity = latest_reading.joint_velocity;
+    state.acceleration = latest_reading.joint_acceleration;
+    state.torque = latest_reading.joint_torque;
   }
+
+  // Now comes the interesting part. We need to take the data from each drive and apply the serial linkage
+  // NOTE: This assumes the joints are declared in the correct order (No clue how I could validate that)
+  kinematics::map_from_coupled_to_serial(state_coupled_kinematics_, state_serial_kinematics_);
+  // Perform the update of the exposed state interface
+  update_state_interfaces(state_interface_mapping_, *this);
+
+  return hardware_interface::return_type::OK;
+}
+hardware_interface::return_type DynaArmHardwareInterface::write(const rclcpp::Time& time,
+                                                                const rclcpp::Duration& period)
+{
+  // Get commands from the ros2control exposed command interfaces
+  update_command_interfaces(command_interface_mapping_, *this);
+  // Translated commands to coupled kinematics
+  kinematics::map_from_serial_to_coupled(commands_serial_kinematics_, commands_coupled_kinematics_);
+
+  for (std::size_t i = 0; i < drives_.size(); i++) {
+    auto& drive = drives_[i];
+    auto& cmd = commands_coupled_kinematics_[i];
+
+    auto command = drive.get_last_command();
+    command.joint_position = cmd.position;
+    command.joint_velocity = cmd.velocity;
+    command.joint_acceleration = cmd.acceleration;
+    command.joint_torque = cmd.torque;
+
+    drive.stage_command(command);
+  }
+}
+
+hardware_interface::return_type DynaArmHardwareInterface::prepare_command_mode_switch(
+    const std::vector<std::string>& start_interfaces, const std::vector<std::string>& stop_interfaces)
+{
+}
+
+hardware_interface::return_type DynaArmHardwareInterface::perform_command_mode_switch(
+    const std::vector<std::string>& start_interfaces, const std::vector<std::string>& stop_interfaces)
+{
 }
 
 DynaArmHardwareInterface::~DynaArmHardwareInterface()
 {
   RCLCPP_INFO_STREAM(logger_, "Destructor of DynaArm Hardware Interface called");
-  ecat_master::EthercatMasterSingleton::instance().releaseMaster(ecat_master_handle_);
-  ecat_master_handle_.ecat_master.reset();
 }
 }  // namespace duatic_dynaarm_driver
 

@@ -23,54 +23,28 @@
  */
 
 #pragma once
+#include <span>
 
-#include <iostream>
-#include <map>
-#include <string>
-#include <vector>
+#include <duatic_dynaarm_driver/types.hpp>
 
-namespace duatic_dynaarm_driver
+namespace duatic_dynaarm_driver::kinematics
 {
+/**
+ * @brief map the system state from the coupled state to the serial equivalent
+ */
+void map_from_coupled_to_serial(std::span<const CoupledJointState> input, std::span<SerialJointState> output);
+/**
+ * @brief map the system state from the serial equivalent to the coupled
+ */
+void map_from_serial_to_coupled(std::span<const SerialJointState> input, std::span<CoupledJointState> output);
 
 /**
- * @brief TranslatableJointState - contains all information of a single drive where the serial linkage translation needs
- * to be applied on
+ * @brief map the system state from the coupled state to the serial equivalent
  */
-struct TranslatableJointState
-{
-  double position{ 0.0 };
-  double velocity{ 0.0 };
-  double acceleration{ 0.0 };
-  double torque{ 0.0 };
+void map_from_coupled_to_serial(std::span<const CoupledCommand> input, std::span<SerialCommand> output);
+/**
+ * @brief map the system state from the serial equivalent to the coupled
+ */
+void map_from_serial_to_coupled(std::span<const SerialCommand> input, std::span<CoupledCommand> output);
 
-  double position_commanded{ 0.0 };
-  double velocity_commanded{ 0.0 };
-  double acceleration_commanded{ 0.0 };
-  double torque_commanded{ 0.0 };
-};
-
-// Provide custom types so we do not mix them up accidentally
-struct SerialJointState : public TranslatableJointState
-{
-};
-struct CoupledJointState : public TranslatableJointState
-{
-};
-
-struct TranslatableCommand
-{
-  double position{ 0.0 };
-  double velocity{ 0.0 };
-  double acceleration{ 0.0 };
-  double torque{ 0.0 };
-};
-
-// Provide custom types so we do not mix them up accidentally
-struct SerialCommand : public TranslatableCommand
-{
-};
-struct CoupledCommand : public TranslatableCommand
-{
-};
-
-}  // namespace duatic_dynaarm_driver
+}  // namespace duatic_dynaarm_driver::kinematics

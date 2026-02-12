@@ -20,6 +20,7 @@ set(PACKAGE_DEPENDENCIES
   urdf
   ethercat_sdk_master
   rsl_drive_sdk
+  duatic_ros2control_hardware
 )
 
 foreach(Dependency IN ITEMS ${PACKAGE_DEPENDENCIES})
@@ -28,8 +29,8 @@ endforeach()
 
 add_library(${PROJECT_NAME} SHARED
   src/dynaarm_hardware_interface.cpp
-  src/dynaarm_mock_hardware_interface.cpp
-  src/dynaarm_hardware_interface_base.cpp
+  #src/dynaarm_mock_hardware_interface.cpp
+  #src/dynaarm_hardware_interface_base.cpp
 )
 target_include_directories(${PROJECT_NAME} PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
