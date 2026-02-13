@@ -22,9 +22,11 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <filesystem>
+
 #include "duatic_dynaarm_driver/dynaarm_mock_hardware_interface.hpp"
 #include "duatic_dynaarm_driver/kinematic_translation.hpp"
-#include <filesystem>
+
 using namespace duatic_ros2control_hardware;  // NOLINT(build/namespaces)
 
 namespace duatic_dynaarm_driver
@@ -81,7 +83,7 @@ DynaArmMockHardwareInterface::export_unlisted_command_interface_descriptions()
                               drive_command_interfaces.end());
   }
   // Append the arm wide freeze mode field
-  command_interfaces.emplace_back(create_interface_description<double>(get_hardware_info().name, "freeze_mode"));
+  command_interfaces.emplace_back(create_interface_description<bool>(get_hardware_info().name, "freeze_mode", true));
 
   for (std::size_t i = 0; i < drives_.size(); i++) {
     auto& drive = drives_[i];
@@ -253,7 +255,7 @@ hardware_interface::return_type DynaArmMockHardwareInterface::write([[maybe_unus
 
   // TODO(firesurfer) port fancy self collision avoidance logic
 
-  const bool enforced_freeze = freeze_mode_interface_->get_value() != 0.0;
+  const bool enforced_freeze = freeze_mode_interface_->get_optional<bool>().value();
   // Stage all commands
   for (std::size_t i = 0; i < drives_.size(); i++) {
     auto& drive = drives_[i];
@@ -265,7 +267,7 @@ hardware_interface::return_type DynaArmMockHardwareInterface::write([[maybe_unus
     command.joint_acceleration = cmd.acceleration;
     command.joint_torque = cmd.torque;
     // TODO(firesurfer) - we should really use the bool type here !
-    command.joint_freeze_mode = enforced_freeze ? 1.0 : 0.0;
+    command.joint_freeze_mode = enforced_freeze;
 
     drive->stage_command(command);
   }
