@@ -73,8 +73,8 @@ public:
 
     // More interesting is now the internal state data mapping
     for (std::size_t i = 0; i < drives_.size(); i++) {
-      auto& drive = drives_[i];
-      auto& state = state_serial_kinematics_[i];
+      auto& drive = drives_.at(i);
+      auto& state = state_serial_kinematics_.at(i);
 
       auto state_mapping = drive->get_default_state_mapping();
       // Now comes the magic - we replace the "position, velocity, acceleration, torque" fields (+ their commanded
