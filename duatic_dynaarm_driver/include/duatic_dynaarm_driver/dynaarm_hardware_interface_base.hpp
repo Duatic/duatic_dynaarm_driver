@@ -306,7 +306,7 @@ public:
       command.joint_velocity = cmd.velocity;
       command.joint_acceleration = cmd.acceleration;
       command.joint_torque = cmd.torque;
-      // TODO(firesurfer) - we should really use the bool type here !
+      // Forward the enforced freeze mode here
       command.joint_freeze_mode = enforced_freeze;
 
       drive->stage_command(command);
