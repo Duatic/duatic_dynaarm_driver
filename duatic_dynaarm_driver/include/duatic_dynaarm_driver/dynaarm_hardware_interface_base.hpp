@@ -332,6 +332,7 @@ public:
   hardware_interface::return_type perform_command_mode_switch(const std::vector<std::string>& start_interfaces,
                                                               const std::vector<std::string>& stop_interfaces) override
   {
+    // TODO we need to track currently active interfaces. Otherwise the selected mode with be wrong
     const auto next_mode = duatic_ros2control_hardware::select_mode(start_interfaces, stop_interfaces, logger_);
     RCLCPP_INFO_STREAM(logger_, "Selecting new control mode: " << next_mode);
     for (auto& drive : drives_) {
