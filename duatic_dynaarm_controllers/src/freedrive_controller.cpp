@@ -176,7 +176,7 @@ FreeDriveController::on_activate([[maybe_unused]] const rclcpp_lifecycle::State&
       RCLCPP_ERROR_STREAM(get_node()->get_logger(), params_.joints[i] << ": error setting i-gain");
     }
 
-    auto d_gain_value = params_.d_gains[i];
+    const auto d_gain_value = params_.d_gain;
     if (!joint_d_gain_command_interfaces_[i].get().set_value(d_gain_value)) {
       RCLCPP_ERROR_STREAM(get_node()->get_logger(), params_.joints[i] << ": error setting d-gain");
     }
