@@ -76,6 +76,7 @@ private:
   freedrive_controller::Params params_;
 
   CommandInterfaceReferences joint_position_command_interfaces_;
+  CommandInterfaceReferences joint_velocity_command_interfaces_;
 
   CommandInterfaceReferences joint_p_gain_command_interfaces_;
   CommandInterfaceReferences joint_i_gain_command_interfaces_;

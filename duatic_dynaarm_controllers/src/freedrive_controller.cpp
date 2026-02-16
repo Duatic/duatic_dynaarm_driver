@@ -42,6 +42,7 @@ controller_interface::InterfaceConfiguration FreeDriveController::command_interf
   const auto joints = params_.joints;
   for (auto& joint : joints) {
     config.names.emplace_back(joint + "/" + hardware_interface::HW_IF_POSITION);
+    config.names.emplace_back(joint + "/" + hardware_interface::HW_IF_VELOCITY);
     config.names.emplace_back(joint + "/" + "p_gain");
     config.names.emplace_back(joint + "/" + "i_gain");
     config.names.emplace_back(joint + "/" + "d_gain");
@@ -101,6 +102,7 @@ FreeDriveController::on_activate([[maybe_unused]] const rclcpp_lifecycle::State&
 
   // clear out vectors in case of restart
   joint_position_command_interfaces_.clear();
+  joint_velocity_command_interfaces_.clear();
   joint_position_state_interfaces_.clear();
 
   joint_p_gain_command_interfaces_.clear();
@@ -114,7 +116,12 @@ FreeDriveController::on_activate([[maybe_unused]] const rclcpp_lifecycle::State&
     RCLCPP_WARN(get_node()->get_logger(), "Could not get ordered command interfaces - position");
     return controller_interface::CallbackReturn::FAILURE;
   }
-
+  if (!controller_interface::get_ordered_interfaces(command_interfaces_, params_.joints,
+                                                    hardware_interface::HW_IF_VELOCITY,
+                                                    joint_velocity_command_interfaces_)) {
+    RCLCPP_WARN(get_node()->get_logger(), "Could not get ordered command interfaces - velocity");
+    return controller_interface::CallbackReturn::FAILURE;
+  }
   if (!controller_interface::get_ordered_interfaces(command_interfaces_, params_.joints, "p_gain",
                                                     joint_p_gain_command_interfaces_)) {
     RCLCPP_WARN(get_node()->get_logger(), "Could not get ordered command interfaces - p_gain");
@@ -178,6 +185,20 @@ FreeDriveController::on_activate([[maybe_unused]] const rclcpp_lifecycle::State&
                         "Set gains: " << params_.joints[i] << " p: " << 0.0 << " i: " << 0.0 << " d: " << d_gain_value);
   }
 
+  // Validate readings at startup
+  std::vector<double> current_positions;
+  for (std::size_t i = 0; i < joint_position_state_interfaces_.size(); i++) {
+    const double current_joint_position =
+        duatic_dynaarm_controllers::compat::require_value(joint_position_state_interfaces_.at(i).get());
+    current_positions.push_back(current_joint_position);
+  }
+
+  if (std::all_of(current_positions.begin(), current_positions.end(), [](const auto& val) { return val == 0.0; })) {
+    RCLCPP_FATAL_STREAM(get_node()->get_logger(), "All initial joint readings were 0.0 - this is indicates a critical "
+                                                  "error");
+    return controller_interface::CallbackReturn::FAILURE;
+  }
+
   return controller_interface::CallbackReturn::SUCCESS;
 };
 
@@ -208,22 +229,26 @@ controller_interface::return_type FreeDriveController::update([[maybe_unused]] c
   // Never the less we command the current joint position. This is only important when switching from this controller to
   // another one
   for (std::size_t i = 0; i < joint_count; i++) {
-    double current_joint_position;
+    // Always command zero velocity as target
+    if (!joint_position_command_interfaces_.at(i).get().set_value(0.0)) {
+      RCLCPP_ERROR_STREAM(get_node()->get_logger(), "Error writing value to command interface (velocity): " << i);
+    }
 
+    // Now feedback the current position as target position
     try {
-      current_joint_position =
+      const double current_joint_position =
           duatic_dynaarm_controllers::compat::require_value(joint_position_state_interfaces_.at(i).get());
+
+      const bool success = joint_position_command_interfaces_.at(i).get().set_value(current_joint_position);
+
+      if (!success) {
+        RCLCPP_ERROR_STREAM(get_node()->get_logger(), "Error wring value to command interface: "
+                                                          << joint_position_command_interfaces_.at(i).get().get_name());
+        return controller_interface::return_type::ERROR;
+      }
     } catch (const duatic_dynaarm_controllers::exceptions::MissingInterfaceValue& e) {
       RCLCPP_ERROR(get_node()->get_logger(), "Failed to read joint position for '%s': %s", params_.joints[i].c_str(),
                    e.what());
-      return controller_interface::return_type::ERROR;
-    }
-
-    const bool success = joint_position_command_interfaces_.at(i).get().set_value(current_joint_position);
-
-    if (!success) {
-      RCLCPP_ERROR_STREAM(get_node()->get_logger(), "Error wring value to command interface: "
-                                                        << joint_position_command_interfaces_.at(i).get().get_name());
       return controller_interface::return_type::ERROR;
     }
   }
