@@ -45,6 +45,10 @@ extern template class duadrive_interface::CoupledKinematicsHardwareInterfaceBase
 // Create aliases for the driver interfaces
 namespace duatic::dynaarm_driver
 {
+template <typename DriveTypeT>
+using DynaArmHardwareInterfaceBase =
+    duadrive_interface::CoupledKinematicsHardwareInterfaceBase<DriveTypeT, kinematics::DynaArmKinematicsTranslator>;
+
 using DynaArmHardwareInterfaceReal =
     duadrive_interface::CoupledKinematicsHardwareInterfaceBase<duadrive_interface::DuaDriveInterface,
                                                                kinematics::DynaArmKinematicsTranslator>;
