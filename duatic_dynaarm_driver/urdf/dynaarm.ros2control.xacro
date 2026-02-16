@@ -103,7 +103,7 @@ THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           <plugin>gz_ros2_control/GazeboSimSystem</plugin>
         </xacro:if>
         <xacro:if value="${mode == 'mock'}">
-          <plugin>duatic_dynaarm_driver/DynaArmMockHardwareInterface</plugin>
+          <plugin>duatic::dynaarm_driver/DynaArmHardwareInterfaceMock</plugin>
           <param name="ethercat_bus">${ethercat_bus}</param>
           <param name="tf_prefix">${tf_prefix}</param>
           <param name="start_in_freeze_mode">${start_in_freeze_mode}</param>
@@ -112,7 +112,7 @@ THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           <param name="initial_positions">[0.05, 0.05, 0.10, 0.05, 0.05, 0.05]</param>
         </xacro:if>
         <xacro:if value="${mode == 'real'}">
-          <plugin>duatic_dynaarm_driver/DynaArmHardwareInterface</plugin>
+          <plugin>duatic::dynaarm_driver/DynaArmHardwareInterfaceReal</plugin>
           <param name="ethercat_bus">${ethercat_bus}</param>
           <param name="tf_prefix">${tf_prefix}</param>
           <param name="start_in_freeze_mode">${start_in_freeze_mode}</param>
