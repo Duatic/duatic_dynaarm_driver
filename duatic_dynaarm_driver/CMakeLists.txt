@@ -20,7 +20,7 @@ set(PACKAGE_DEPENDENCIES
   urdf
   ethercat_sdk_master
   rsl_drive_sdk
-  duatic_ros2control_hardware
+  duatic_duadrive_interface
 )
 
 foreach(Dependency IN ITEMS ${PACKAGE_DEPENDENCIES})

@@ -22,15 +22,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <filesystem>
-
 #include "duatic_dynaarm_driver/dynaarm_hardware_interface_base.hpp"
-#include <duatic_ros2control_hardware/duadrive_interface_mock.hpp>
-namespace duatic_dynaarm_driver
+
+namespace duatic
 {
-using DynaArmMockHardwareInterface = DynaArmHardwareInterfaceBase<duatic_ros2control_hardware::DuaDriveInterfaceMock>;
-}  // namespace duatic_dynaarm_driver
+
+template class duadrive_interface::CoupledKinematicsHardwareInterfaceBase<
+    duadrive_interface::DuaDriveInterfaceMock, dynaarm_driver::kinematics::DynaArmKinematicsTranslator>;
+}
 
 #include "pluginlib/class_list_macros.hpp"
 
-PLUGINLIB_EXPORT_CLASS(duatic_dynaarm_driver::DynaArmMockHardwareInterface, hardware_interface::SystemInterface)
+PLUGINLIB_EXPORT_CLASS(duatic::dynaarm_driver::DynaArmHardwareInterfaceMock, hardware_interface::SystemInterface)

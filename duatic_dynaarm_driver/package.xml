@@ -23,7 +23,7 @@
   <depend>ethercat_sdk_master</depend>
   <depend>rsl_drive_sdk</depend>
   <depend>hardware_interface</depend>
-  <depend>duatic_ros2control_hardware</depend>
+  <depend>duatic_duadrive_interface</depend>
 
 
   <exec_depend>duatic_control</exec_depend>

@@ -25,26 +25,35 @@
 #pragma once
 #include <span>
 
-#include <duatic_dynaarm_driver/types.hpp>
+#include <duatic_duadrive_interface/coupled_kinematics_types.hpp>
 
-namespace duatic_dynaarm_driver::kinematics
+namespace duatic::dynaarm_driver::kinematics
 {
-/**
- * @brief map the system state from the coupled state to the serial equivalent
- */
-void map_from_coupled_to_serial(std::span<const CoupledJointState> input, std::span<SerialJointState> output);
-/**
- * @brief map the system state from the serial equivalent to the coupled
- */
-void map_from_serial_to_coupled(std::span<const SerialJointState> input, std::span<CoupledJointState> output);
+// Bring the types into our namespace
+using SerialJointState = duadrive_interface::SerialJointState;
+using CoupledJointState = duadrive_interface::CoupledJointState;
+using SerialCommand = duadrive_interface::SerialCommand;
+using CoupledCommand = duadrive_interface::CoupledCommand;
 
-/**
- * @brief map the system state from the coupled state to the serial equivalent
- */
-void map_from_coupled_to_serial(std::span<const CoupledCommand> input, std::span<SerialCommand> output);
-/**
- * @brief map the system state from the serial equivalent to the coupled
- */
-void map_from_serial_to_coupled(std::span<const SerialCommand> input, std::span<CoupledCommand> output);
+struct DynaArmKinematicsTranslator
+{
+  /**
+   * @brief map the system state from the coupled state to the serial equivalent
+   */
+  static void map_from_coupled_to_serial(std::span<const CoupledJointState> input, std::span<SerialJointState> output);
+  /**
+   * @brief map the system state from the serial equivalent to the coupled
+   */
+  static void map_from_serial_to_coupled(std::span<const SerialJointState> input, std::span<CoupledJointState> output);
 
-}  // namespace duatic_dynaarm_driver::kinematics
+  /**
+   * @brief map the system state from the coupled state to the serial equivalent
+   */
+  static void map_from_coupled_to_serial(std::span<const CoupledCommand> input, std::span<SerialCommand> output);
+  /**
+   * @brief map the system state from the serial equivalent to the coupled
+   */
+  static void map_from_serial_to_coupled(std::span<const SerialCommand> input, std::span<CoupledCommand> output);
+};
+
+}  // namespace duatic::dynaarm_driver::kinematics

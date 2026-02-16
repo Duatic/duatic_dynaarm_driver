@@ -27,7 +27,7 @@
 // Keep eigen private to this file
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/Dense>
-namespace duatic_dynaarm_driver::kinematics
+namespace duatic::dynaarm_driver::kinematics
 {
 
 /*!
@@ -130,7 +130,8 @@ static Eigen::VectorXd map_from_serial_to_coupled_torques(const Eigen::VectorXd&
   return mapping * input;
 }
 
-void map_from_coupled_to_serial(std::span<const CoupledJointState> input, std::span<SerialJointState> output)
+void DynaArmKinematicsTranslator::map_from_coupled_to_serial(std::span<const CoupledJointState> input,
+                                                             std::span<SerialJointState> output)
 {
   assert(input.size() == output.size());
   const std::size_t n = input.size();
@@ -177,11 +178,10 @@ void map_from_coupled_to_serial(std::span<const CoupledJointState> input, std::s
     output[i].acceleration_commanded = a_commanded_s[i];
     output[i].torque_commanded = t_commanded_s[i];
   }
-
-  // TODO(firesurfer) add commanded values
 }
 
-void map_from_serial_to_coupled(std::span<const SerialJointState> input, std::span<CoupledJointState> output)
+void DynaArmKinematicsTranslator::map_from_serial_to_coupled(std::span<const SerialJointState> input,
+                                                             std::span<CoupledJointState> output)
 {
   assert(input.size() == output.size());
   const std::size_t n = input.size();
@@ -230,7 +230,8 @@ void map_from_serial_to_coupled(std::span<const SerialJointState> input, std::sp
   }
 }
 
-void map_from_coupled_to_serial(std::span<const CoupledCommand> input, std::span<SerialCommand> output)
+void DynaArmKinematicsTranslator::map_from_coupled_to_serial(std::span<const CoupledCommand> input,
+                                                             std::span<SerialCommand> output)
 {
   assert(input.size() == output.size());
   const std::size_t n = input.size();
@@ -259,7 +260,8 @@ void map_from_coupled_to_serial(std::span<const CoupledCommand> input, std::span
   }
 }
 
-void map_from_serial_to_coupled(std::span<const SerialCommand> input, std::span<CoupledCommand> output)
+void DynaArmKinematicsTranslator::map_from_serial_to_coupled(std::span<const SerialCommand> input,
+                                                             std::span<CoupledCommand> output)
 {
   assert(input.size() == output.size());
   const std::size_t n = input.size();
@@ -288,4 +290,4 @@ void map_from_serial_to_coupled(std::span<const SerialCommand> input, std::span<
   }
 }
 
-}  // namespace duatic_dynaarm_driver::kinematics
+}  // namespace duatic::dynaarm_driver::kinematics

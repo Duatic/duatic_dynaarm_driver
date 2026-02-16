@@ -23,13 +23,14 @@
  */
 
 #include "duatic_dynaarm_driver/dynaarm_hardware_interface_base.hpp"
-#include <duatic_ros2control_hardware/duadrive_interface.hpp>
 
-namespace duatic_dynaarm_driver
+namespace duatic
 {
-using DynaArmHardwareInterface = DynaArmHardwareInterfaceBase<duatic_ros2control_hardware::DuaDriveInterface>;
-}  // namespace duatic_dynaarm_driver
+
+template class duadrive_interface::CoupledKinematicsHardwareInterfaceBase<
+    duadrive_interface::DuaDriveInterface, dynaarm_driver::kinematics::DynaArmKinematicsTranslator>;
+}
 
 #include "pluginlib/class_list_macros.hpp"
 
-PLUGINLIB_EXPORT_CLASS(duatic_dynaarm_driver::DynaArmHardwareInterface, hardware_interface::SystemInterface)
+PLUGINLIB_EXPORT_CLASS(duatic::dynaarm_driver::DynaArmHardwareInterfaceReal, hardware_interface::SystemInterface)
