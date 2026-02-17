@@ -36,7 +36,9 @@ THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         mode
         parent_unit
         version
-        tf_prefix">
+        tf_prefix
+        ethercat_addresses
+        drive_parameter_folder:=''">
 
 
       <!--Allow the user to pass a custom folder for drive parameters-->
@@ -137,7 +139,6 @@ THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <xacro:if value="${mode == 'mock'}">
           <!--Special case for mocked hardware (simple feedback)-->
           <plugin>duatic::dynaarm_driver/DynaArmHardwareInterfaceMock</plugin>
-          <param name="ethercat_bus">${ethercat_bus}</param>
           <param name="tf_prefix">${tf_prefix}</param>
           <param name="start_in_freeze_mode">${start_in_freeze_mode}</param>
           <param name="initial_positions">[0.05, 0.05, 0.10, 0.05, 0.05, 0.05]</param>
@@ -145,7 +146,6 @@ THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <xacro:if value="${mode == 'real'}">
           <!--Special case for real hardware-->
           <plugin>duatic::dynaarm_driver/DynaArmHardwareInterfaceReal</plugin>
-          <param name="ethercat_bus">${ethercat_bus}</param>
           <param name="tf_prefix">${tf_prefix}</param>
           <param name="start_in_freeze_mode">${start_in_freeze_mode}</param>
         </xacro:if>
@@ -156,7 +156,8 @@ THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         mode="${mode}"
         version="${version}"
         ethercat_bus="${ethercat_bus}"
-        parent_unit="${tf_prefix}DynaarmSystem"/>
+        parent_unit="${tf_prefix}DynaarmSystem"
+        ethercat_addresses="${ethercat_addresses}"/>
 
     </ros2_control>
   </xacro:macro>
