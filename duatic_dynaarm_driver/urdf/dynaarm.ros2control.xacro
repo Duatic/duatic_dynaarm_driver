@@ -103,12 +103,12 @@ THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           parent_unit="${parent_unit}"
           drive_parameter_file_path="${drive_parameter_folder_internal}/wrist_rotation.yaml" />
       </xacro:if>
-
+      <!--
       <xacro:if value="${mode != 'isaac'}">
         <gpio name="${parent_unit}">
           <command_interface name="freeze_mode" />
         </gpio>
-      </xacro:if>
+      </xacro:if>-->
   </xacro:macro>
 
   <xacro:macro name="dynaarm_ros2_control"
