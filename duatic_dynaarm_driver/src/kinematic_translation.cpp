@@ -24,19 +24,18 @@
 
 #include "duatic_dynaarm_driver/kinematic_translation.hpp"
 
-// Keep eigen private to this file
-#include <eigen3/Eigen/Core>
-#include <eigen3/Eigen/Dense>
 namespace duatic::dynaarm_driver::kinematics
 {
 
+namespace impl
+{
 /*!
  * Compute the mapping from the absolute angles of the dynaarm to the relative angles used in the Ocs2 convention.
  * theta = relative angles
  * q = absolute angles
  * theta = mappingFromAbsoluteToRelativeAngles * q
  */
-static Eigen::VectorXd map_from_coupled_to_serial_coordinates(const Eigen::VectorXd& input)
+Eigen::VectorXd map_from_coupled_to_serial_coordinates(const Eigen::VectorXd& input)
 {
   int size = input.size();
   if (size < 4) {
@@ -58,7 +57,7 @@ static Eigen::VectorXd map_from_coupled_to_serial_coordinates(const Eigen::Vecto
   return mapping * input;
 }
 
-static Eigen::VectorXd map_from_coupled_to_serial_torques(const Eigen::VectorXd& input)
+Eigen::VectorXd map_from_coupled_to_serial_torques(const Eigen::VectorXd& input)
 {
   int size = input.size();
   if (size < 4) {
@@ -86,7 +85,7 @@ static Eigen::VectorXd map_from_coupled_to_serial_torques(const Eigen::VectorXd&
  * q = absolute angles
  * q = mappingFromRelativeToAbsoluteAngles * theta
  */
-static Eigen::VectorXd map_from_serial_to_coupled_coordinates(const Eigen::VectorXd& input)
+Eigen::VectorXd map_from_serial_to_coupled_coordinates(const Eigen::VectorXd& input)
 {
   int size = input.size();
   if (size < 4) {
@@ -108,7 +107,7 @@ static Eigen::VectorXd map_from_serial_to_coupled_coordinates(const Eigen::Vecto
   return mapping * input;
 }
 
-static Eigen::VectorXd map_from_serial_to_coupled_torques(const Eigen::VectorXd& input)
+Eigen::VectorXd map_from_serial_to_coupled_torques(const Eigen::VectorXd& input)
 {
   int size = input.size();
   if (size < 4) {
@@ -129,6 +128,9 @@ static Eigen::VectorXd map_from_serial_to_coupled_torques(const Eigen::VectorXd&
   // Return the transformed vector
   return mapping * input;
 }
+
+}  // namespace impl
+using namespace impl;  // NOLINT(build/namespaces)
 
 void DynaArmKinematicsTranslator::map_from_coupled_to_serial(std::span<const CoupledJointState> input,
                                                              std::span<SerialJointState> output)

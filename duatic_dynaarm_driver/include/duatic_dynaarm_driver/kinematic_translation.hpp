@@ -25,6 +25,9 @@
 #pragma once
 #include <span>
 
+#include <eigen3/Eigen/Core>
+#include <eigen3/Eigen/Dense>
+
 #include <duatic_duadrive_interface/coupled_kinematics_types.hpp>
 
 namespace duatic::dynaarm_driver::kinematics
@@ -55,5 +58,13 @@ struct DynaArmKinematicsTranslator
    */
   static void map_from_serial_to_coupled(std::span<const SerialCommand> input, std::span<CoupledCommand> output);
 };
+
+namespace impl
+{
+Eigen::VectorXd map_from_coupled_to_serial_coordinates(const Eigen::VectorXd& input);
+Eigen::VectorXd map_from_coupled_to_serial_torques(const Eigen::VectorXd& input);
+Eigen::VectorXd map_from_serial_to_coupled_coordinates(const Eigen::VectorXd& input);
+Eigen::VectorXd map_from_serial_to_coupled_torques(const Eigen::VectorXd& input);
+}  // namespace impl
 
 }  // namespace duatic::dynaarm_driver::kinematics
