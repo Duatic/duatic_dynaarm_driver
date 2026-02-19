@@ -7,6 +7,10 @@ repositories:
     type: git
     url: https://github.com/Duatic/duatic_dynaarm_description.git
     version: main
+  duatic_ros2control:
+    type: git
+    url: https://github.com/Duatic/duatic_ros2control.git
+    version: main
   ethercat_sdk_master:
     type: git
     url: https://github.com/Duatic/ethercat_sdk_master.git

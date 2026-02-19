@@ -1,13 +1,13 @@
 <library path="duatic_dynaarm_driver">
-  <class name="duatic_dynaarm_driver/DynaArmHardwareInterface"
-    type="duatic_dynaarm_driver::DynaArmHardwareInterface"
+  <class name="duatic::dynaarm_driver/DynaArmHardwareInterfaceReal"
+    type="duatic::dynaarm_driver::DynaArmHardwareInterfaceReal"
     base_class_type="hardware_interface::SystemInterface">
     <description>
       ROS Control System driver for the Dynaarm
     </description>
   </class>
-  <class name="duatic_dynaarm_driver/DynaarmMockHardwareInterface"
-    type="duatic_dynaarm_driver::DynaarmMockHardwareInterface"
+  <class name="duatic::dynaarm_driver/DynaArmHardwareInterfaceMock"
+    type="duatic::dynaarm_driver::DynaArmHardwareInterfaceMock"
     base_class_type="hardware_interface::SystemInterface">
     <description>
       ROS Control System driver for the Dynaarm
