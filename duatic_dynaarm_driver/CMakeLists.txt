@@ -14,12 +14,8 @@ find_package(ament_cmake REQUIRED)
 find_package(yaml-cpp REQUIRED)
 
 set(PACKAGE_DEPENDENCIES
-  rclcpp
   pluginlib
-  hardware_interface
   urdf
-  ethercat_sdk_master
-  rsl_drive_sdk
   duatic_duadrive_interface
 )
 
