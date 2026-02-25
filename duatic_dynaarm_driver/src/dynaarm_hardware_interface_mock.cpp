@@ -28,7 +28,7 @@ namespace duatic
 {
 
 template class duadrive_interface::CoupledKinematicsHardwareInterfaceBase<
-    duadrive_interface::DuaDriveInterfaceMock, dynaarm_driver::kinematics::DynaArmKinematicsTranslator>;
+    duadrive_interface::DuaDriveInterfaceMock, dynaarm_driver::kinematics::DynaArmKinematicsTranslator, true>;
 }
 
 #include "pluginlib/class_list_macros.hpp"

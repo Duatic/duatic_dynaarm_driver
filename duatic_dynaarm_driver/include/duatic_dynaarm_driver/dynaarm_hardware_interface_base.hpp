@@ -36,10 +36,10 @@
 namespace duatic
 {
 extern template class duadrive_interface::CoupledKinematicsHardwareInterfaceBase<
-    duadrive_interface::DuaDriveInterface, dynaarm_driver::kinematics::DynaArmKinematicsTranslator>;
+    duadrive_interface::DuaDriveInterface, dynaarm_driver::kinematics::DynaArmKinematicsTranslator, true>;
 
 extern template class duadrive_interface::CoupledKinematicsHardwareInterfaceBase<
-    duadrive_interface::DuaDriveInterfaceMock, dynaarm_driver::kinematics::DynaArmKinematicsTranslator>;
+    duadrive_interface::DuaDriveInterfaceMock, dynaarm_driver::kinematics::DynaArmKinematicsTranslator, true>;
 }  // namespace duatic
 
 // Create aliases for the driver interfaces
@@ -47,13 +47,14 @@ namespace duatic::dynaarm_driver
 {
 template <typename DriveTypeT>
 using DynaArmHardwareInterfaceBase =
-    duadrive_interface::CoupledKinematicsHardwareInterfaceBase<DriveTypeT, kinematics::DynaArmKinematicsTranslator>;
+    duadrive_interface::CoupledKinematicsHardwareInterfaceBase<DriveTypeT, kinematics::DynaArmKinematicsTranslator,
+                                                               true>;
 
 using DynaArmHardwareInterfaceReal =
     duadrive_interface::CoupledKinematicsHardwareInterfaceBase<duadrive_interface::DuaDriveInterface,
-                                                               kinematics::DynaArmKinematicsTranslator>;
+                                                               kinematics::DynaArmKinematicsTranslator, true>;
 using DynaArmHardwareInterfaceMock =
     duadrive_interface::CoupledKinematicsHardwareInterfaceBase<duadrive_interface::DuaDriveInterfaceMock,
-                                                               kinematics::DynaArmKinematicsTranslator>;
+                                                               kinematics::DynaArmKinematicsTranslator, true>;
 
 }  // namespace duatic::dynaarm_driver
