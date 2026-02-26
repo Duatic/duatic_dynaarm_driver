@@ -147,7 +147,7 @@ class DuaticJTCHelper:
             found_topics = [
                 (topic, types)
                 for topic, types in all_matched_topics
-                if any(f"_{component_name}/" in topic for component_name in component_names)
+                if any(f"_{component_name}/" in topic if component_name else True for component_name in component_names)
             ]
 
             if len(found_topics) >= len(component_names):
