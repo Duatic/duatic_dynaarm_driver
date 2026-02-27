@@ -101,7 +101,7 @@ FreezeController::on_activate([[maybe_unused]] const rclcpp_lifecycle::State& pr
                      "Enable freeze mode for: " << fmt::format("{}", fmt::join(params_.names, ", ")));
 
   for (auto& interface_ref : freeze_mode_interfaces) {
-    if (!interface_ref.at(0).get().set_value(1.0)) {
+    if (!interface_ref.at(0).get().set_value(true)) {
       RCLCPP_ERROR_STREAM(get_node()->get_logger(), "Could not write freeze_mode field - this is a problem!");
       return controller_interface::CallbackReturn::FAILURE;
     }
@@ -118,7 +118,7 @@ FreezeController::on_deactivate([[maybe_unused]] const rclcpp_lifecycle::State& 
                        "Disable freeze mode for: " << fmt::format("{}", fmt::join(params_.names, ", ")));
 
     for (auto& interface_ref : freeze_mode_interfaces) {
-      if (!interface_ref.at(0).get().set_value(0.0)) {
+      if (!interface_ref.at(0).get().set_value(false)) {
         RCLCPP_ERROR_STREAM(get_node()->get_logger(), "Could not write freeze_mode field - this is a problem!");
         return controller_interface::CallbackReturn::FAILURE;
       }

@@ -22,78 +22,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#pragma once
+#include "duatic_dynaarm_driver/dynaarm_hardware_interface_base.hpp"
 
-#include <iostream>
-#include <map>
-#include <string>
-#include <vector>
-
-namespace duatic_dynaarm_hardware_interface_common
+namespace duatic
 {
-struct JointState
-{
-  std::string name;
-  double position = 0.0;
-  double velocity = 0.0;
-  double acceleration = 0.0;
-  double effort = 0.0;
 
-  double position_last = NAN;
+template class duadrive_interface::CoupledKinematicsHardwareInterfaceBase<
+    duadrive_interface::DuaDriveInterfaceMock, dynaarm_driver::kinematics::DynaArmKinematicsTranslator, true>;
+}
 
-  double position_commanded = 0.0;
-  double velocity_commanded = 0.0;
-  double acceleration_commanded = 0.0;
-  double effort_commanded = 0.0;
-};
+#include "pluginlib/class_list_macros.hpp"
 
-struct JointCommand
-{
-  std::string name;
-  double position = 0.0;
-  double velocity = 0.0;
-  double acceleration = 0.0;
-  double effort = 0.0;
-  double p_gain = 0.0;
-  double i_gain = 0.0;
-  double d_gain = 0.0;
-};
-
-struct MotorState
-{
-  std::string name;
-  double position = 0.0;
-  double velocity = 0.0;
-  double acceleration = 0.0;
-  double effort = 0.0;
-
-  double bus_voltage = 0.0;
-
-  double temperature = 0.0;
-  double temperature_coil_A = 0.0;
-  double temperature_coil_B = 0.0;
-  double temperature_coil_C = 0.0;
-
-  double position_commanded = 0.0;
-  double velocity_commanded = 0.0;
-  double effort_commanded = 0.0;
-
-  double current_q = 0.0;
-  double current_d = 0.0;
-  double current_coil_A = 0.0;
-  double current_coil_B = 0.0;
-  double current_coil_C = 0.0;
-};
-
-struct MotorCommand
-{
-  std::string name;
-  double position = 0.0;
-  double velocity = 0.0;
-  double effort = 0.0;
-  double p_gain = 0.0;
-  double i_gain = 0.0;
-  double d_gain = 0.0;
-};
-
-}  // namespace duatic_dynaarm_hardware_interface_common
+PLUGINLIB_EXPORT_CLASS(duatic::dynaarm_driver::DynaArmHardwareInterfaceMock, hardware_interface::SystemInterface)

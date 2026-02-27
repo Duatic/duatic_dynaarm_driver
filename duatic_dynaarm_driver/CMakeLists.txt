@@ -14,12 +14,9 @@ find_package(ament_cmake REQUIRED)
 find_package(yaml-cpp REQUIRED)
 
 set(PACKAGE_DEPENDENCIES
-  rclcpp
   pluginlib
-  hardware_interface
   urdf
-  ethercat_sdk_master
-  rsl_drive_sdk
+  duatic_duadrive_interface
 )
 
 foreach(Dependency IN ITEMS ${PACKAGE_DEPENDENCIES})
@@ -27,9 +24,9 @@ foreach(Dependency IN ITEMS ${PACKAGE_DEPENDENCIES})
 endforeach()
 
 add_library(${PROJECT_NAME} SHARED
-  src/dynaarm_hardware_interface.cpp
-  src/dynaarm_mock_hardware_interface.cpp
-  src/dynaarm_hardware_interface_base.cpp
+  src/dynaarm_hardware_interface_real.cpp
+  src/dynaarm_hardware_interface_mock.cpp
+  src/kinematic_translation.cpp
 )
 target_include_directories(${PROJECT_NAME} PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
