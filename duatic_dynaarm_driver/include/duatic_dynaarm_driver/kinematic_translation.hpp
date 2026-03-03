@@ -29,42 +29,22 @@
 #include <eigen3/Eigen/Dense>
 
 #include <duatic_duadrive_interface/coupled_kinematics_types.hpp>
+#include <duatic_duadrive_interface/coupled_kinematics_translator.hpp>
 
 namespace duatic::dynaarm_driver::kinematics
 {
-// Bring the types into our namespace
-using SerialJointState = duadrive_interface::SerialJointState;
-using CoupledJointState = duadrive_interface::CoupledJointState;
-using SerialCommand = duadrive_interface::SerialCommand;
-using CoupledCommand = duadrive_interface::CoupledCommand;
-
-struct DynaArmKinematicsTranslator
+struct DynaArmKinematicsMapping
 {
-  /**
-   * @brief map the system state from the coupled state to the serial equivalent
-   */
-  static void map_from_coupled_to_serial(std::span<const CoupledJointState> input, std::span<SerialJointState> output);
-  /**
-   * @brief map the system state from the serial equivalent to the coupled
-   */
-  static void map_from_serial_to_coupled(std::span<const SerialJointState> input, std::span<CoupledJointState> output);
+  using VectorType = Eigen::VectorXd;
+  static VectorType map_from_coupled_to_serial_coordinates(const VectorType& input);
+  static VectorType map_from_coupled_to_serial_torques(const VectorType& input);
+  static VectorType map_from_serial_to_coupled_coordinates(const VectorType& input);
+  static VectorType map_from_serial_to_coupled_torques(const VectorType& input);
 
-  /**
-   * @brief map the system state from the coupled state to the serial equivalent
-   */
-  static void map_from_coupled_to_serial(std::span<const CoupledCommand> input, std::span<SerialCommand> output);
-  /**
-   * @brief map the system state from the serial equivalent to the coupled
-   */
-  static void map_from_serial_to_coupled(std::span<const SerialCommand> input, std::span<CoupledCommand> output);
+  static constexpr std::size_t input_size()
+  {
+    return 6;
+  }
 };
-
-namespace impl
-{
-Eigen::VectorXd map_from_coupled_to_serial_coordinates(const Eigen::VectorXd& input);
-Eigen::VectorXd map_from_coupled_to_serial_torques(const Eigen::VectorXd& input);
-Eigen::VectorXd map_from_serial_to_coupled_coordinates(const Eigen::VectorXd& input);
-Eigen::VectorXd map_from_serial_to_coupled_torques(const Eigen::VectorXd& input);
-}  // namespace impl
 
 }  // namespace duatic::dynaarm_driver::kinematics

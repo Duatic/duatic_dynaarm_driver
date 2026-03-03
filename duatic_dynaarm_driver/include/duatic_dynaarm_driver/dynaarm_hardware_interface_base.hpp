@@ -35,11 +35,12 @@
 // Create explicit instances to reduce downstream compilation effort
 namespace duatic
 {
-extern template class duadrive_interface::CoupledKinematicsHardwareInterfaceBase<
-    duadrive_interface::DuaDriveInterface, dynaarm_driver::kinematics::DynaArmKinematicsTranslator, true>;
 
 extern template class duadrive_interface::CoupledKinematicsHardwareInterfaceBase<
-    duadrive_interface::DuaDriveInterfaceMock, dynaarm_driver::kinematics::DynaArmKinematicsTranslator, true>;
+    duadrive_interface::DuaDriveInterface, dynaarm_driver::kinematics::DynaArmKinematicsMapping, true>;
+
+extern template class duadrive_interface::CoupledKinematicsHardwareInterfaceBase<
+    duadrive_interface::DuaDriveInterfaceMock, dynaarm_driver::kinematics::DynaArmKinematicsMapping, true>;
 }  // namespace duatic
 
 // Create aliases for the driver interfaces
@@ -47,14 +48,13 @@ namespace duatic::dynaarm_driver
 {
 template <typename DriveTypeT>
 using DynaArmHardwareInterfaceBase =
-    duadrive_interface::CoupledKinematicsHardwareInterfaceBase<DriveTypeT, kinematics::DynaArmKinematicsTranslator,
-                                                               true>;
+    duadrive_interface::CoupledKinematicsHardwareInterfaceBase<DriveTypeT, kinematics::DynaArmKinematicsMapping, true>;
 
 using DynaArmHardwareInterfaceReal =
     duadrive_interface::CoupledKinematicsHardwareInterfaceBase<duadrive_interface::DuaDriveInterface,
-                                                               kinematics::DynaArmKinematicsTranslator, true>;
+                                                               kinematics::DynaArmKinematicsMapping, true>;
 using DynaArmHardwareInterfaceMock =
     duadrive_interface::CoupledKinematicsHardwareInterfaceBase<duadrive_interface::DuaDriveInterfaceMock,
-                                                               kinematics::DynaArmKinematicsTranslator, true>;
+                                                               kinematics::DynaArmKinematicsMapping, true>;
 
 }  // namespace duatic::dynaarm_driver
