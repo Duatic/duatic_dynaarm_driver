@@ -96,5 +96,7 @@ private:
   WrenchStamped wrench_offset_;
 
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr zero_service_;
+
+  std::vector<pinocchio::JointIndex> joint_indices_;
 };
 }  // namespace duatic_dynaarm_controllers
