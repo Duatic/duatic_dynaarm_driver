@@ -98,15 +98,15 @@ modes:
 
   - name: JointPositionVelocity
     gains:
-      p: 0.1
-      i: 0.00000
-      d: 0.00000
+      p: 600.0
+      i: 0.5
+      d: 20.0
 
   - name: JointPositionVelocityTorque
     gains:
-      p: 60.0
-      i: 0.05
-      d: 5.0
+      p: 600.0
+      i: 0.5
+      d: 20.0
 
   - name: JointPositionVelocityTorquePidGains
     gains:

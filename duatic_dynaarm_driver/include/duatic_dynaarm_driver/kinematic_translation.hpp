@@ -23,46 +23,28 @@
  */
 
 #pragma once
+#include <span>
 
-// System
-#include <limits>
-#include <memory>
-#include <string>
-#include <vector>
-#include "eigen3/Eigen/Core"
-#include "eigen3/Eigen/Dense"
+#include <eigen3/Eigen/Core>
+#include <eigen3/Eigen/Dense>
 
-// ros2_control hardware_interface
-#include <rclcpp/rclcpp.hpp>
-#include "hardware_interface/hardware_info.hpp"
-#include "hardware_interface/system_interface.hpp"
-#include "hardware_interface/types/hardware_interface_return_values.hpp"
+#include <duatic_duadrive_interface/coupled_kinematics_types.hpp>
+#include <duatic_duadrive_interface/coupled_kinematics_translator.hpp>
 
-// ROS
-#include <rclcpp/macros.hpp>
-#include <rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp>
-#include <rclcpp_lifecycle/state.hpp>
-#include <ament_index_cpp/get_package_share_directory.hpp>
-
-// hardware interface
-#include <duatic_dynaarm_driver/dynaarm_hardware_interface_base.hpp>
-
-namespace duatic_dynaarm_driver
+namespace duatic::dynaarm_driver::kinematics
 {
-class DynaarmMockHardwareInterface : public DynaArmHardwareInterfaceBase
+struct DynaArmKinematicsMapping
 {
-public:
-  RCLCPP_SHARED_PTR_DEFINITIONS(DynaarmMockHardwareInterface)
+  using VectorType = Eigen::VectorXd;
+  static VectorType map_from_coupled_to_serial_coordinates(const VectorType& input);
+  static VectorType map_from_coupled_to_serial_torques(const VectorType& input);
+  static VectorType map_from_serial_to_coupled_coordinates(const VectorType& input);
+  static VectorType map_from_serial_to_coupled_torques(const VectorType& input);
 
-  ~DynaarmMockHardwareInterface();
-
-  hardware_interface::CallbackReturn on_init_derived(const hardware_interface::HardwareInfo& system_info) override;
-
-  hardware_interface::CallbackReturn on_activate_derived(const rclcpp_lifecycle::State& previous_state) override;
-  hardware_interface::CallbackReturn on_deactivate_derived(const rclcpp_lifecycle::State& previous_state) override;
-
-  void read_motor_states() override;
-  void write_motor_commands() override;
+  static constexpr std::size_t input_size()
+  {
+    return 6;
+  }
 };
 
-}  // namespace duatic_dynaarm_driver
+}  // namespace duatic::dynaarm_driver::kinematics
