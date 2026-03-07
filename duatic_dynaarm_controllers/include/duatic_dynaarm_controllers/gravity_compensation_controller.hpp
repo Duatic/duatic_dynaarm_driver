@@ -88,5 +88,7 @@ private:
   std::vector<double> initial_joint_positions_;
   rclcpp::Time activation_time_;
   bool activation_time_set_ = false;
+
+  std::vector<pinocchio::JointIndex> joint_indices_;
 };
 }  // namespace duatic_dynaarm_controllers

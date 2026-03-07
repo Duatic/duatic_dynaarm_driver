@@ -120,36 +120,19 @@ ForceTorqueBroadcaster::on_configure([[maybe_unused]] const rclcpp_lifecycle::St
   pinocchio::urdf::buildModelFromXML(get_robot_description(), pinocchio_model_);
   pinocchio_data_ = pinocchio::Data(pinocchio_model_);
 
-  // Extract joint names from Pinocchio model that match params_.joints
-  std::vector<std::string> pinocchio_joint_names;
-  for (size_t i = 1; i < pinocchio_model_.joints.size(); ++i)  // Start from 1 to skip the universe/root joint
-  {
-    std::string joint_name = pinocchio_model_.names[i];
-    // Only add if this joint is in params_.joints
-    if (std::find(params_.joints.begin(), params_.joints.end(), joint_name) != params_.joints.end()) {
-      pinocchio_joint_names.push_back(joint_name);
-    }
-  }
-
-  // 1. Validate joint names (amount)
-  if (pinocchio_joint_names.size() != params_.joints.size()) {
-    RCLCPP_ERROR(get_node()->get_logger(),
-                 "Joint count mismatch: Pinocchio model has %zu relevant joints, but interface has %zu joints.",
-                 pinocchio_joint_names.size(), params_.joints.size());
-    return controller_interface::CallbackReturn::ERROR;
-  }
-
-  // 2. Validate joint names order
-  for (size_t i = 0; i < pinocchio_joint_names.size(); ++i) {
-    if (pinocchio_joint_names[i] != params_.joints[i]) {
-      RCLCPP_ERROR(get_node()->get_logger(),
-                   "Joint name mismatch at index %zu: Pinocchio joint is '%s', interface joint is '%s'.", i,
-                   pinocchio_joint_names[i].c_str(), params_.joints[i].c_str());
+  for (const auto& joint_name : params_.joints) {
+    if (!pinocchio_model_.existJointName(joint_name)) {
+      RCLCPP_ERROR(get_node()->get_logger(), "Joint '%s' not found in Pinocchio model.", joint_name.c_str());
       return controller_interface::CallbackReturn::ERROR;
     }
   }
-
   frame_index_ = pinocchio_model_.getFrameId(params_.endeffector_frame);
+
+  // Build joint index cache
+  joint_indices_.clear();
+  for (const auto& joint : params_.joints) {
+    joint_indices_.push_back(pinocchio_model_.getJointId(joint));
+  }
 
   // The wrench publisher
   wrench_pub_ =
@@ -229,7 +212,7 @@ controller_interface::return_type ForceTorqueBroadcaster::update([[maybe_unused]
   // Map: Pinocchio joint name -> index in q/v
   for (std::size_t i = 0; i < joint_count; i++) {
     const std::string& joint_name = params_.joints[i];
-    auto idx = pinocchio_model_.getJointId(joint_name);
+    const auto idx = joint_indices_[i];
     if (idx == 0) {
       RCLCPP_ERROR(get_node()->get_logger(), "Joint '%s' not found in Pinocchio model.", joint_name.c_str());
       return controller_interface::return_type::ERROR;
